@@ -19,6 +19,7 @@ class RPCHost(object):
         while True:
             try:
                 response = self._session.post(self._url, headers=self._headers, data=payload)
+                print("Response:  %s"%(response))
             except requests.exceptions.ConnectionError:
                 tries -= 1
                 if tries == 0:
@@ -33,14 +34,24 @@ class RPCHost(object):
         if not response.status_code in (200, 500):
             raise Exception('RPC connection failure: ' + str(response.status_code) + ' ' + response.reason)
         responseJSON = response.json()
+        print("Response JSON: %s"%(responseJSON))
         if 'error' in responseJSON and responseJSON['error'] != None:
             raise Exception('Error in RPC call: ' + str(responseJSON['error']))
         return responseJSON['result']
 
-txout = "5b35e60862793746175d4444b35c092d2011615c327b42f1ea66a1b6a251835b"
-txout_number = 8
-host = RPCHost()
-response = host.call("gettxout", txout, txout_number)
-print(response)
+
+
+# txout = "5b35e60862793746175d4444b35c092d2011615c327b42f1ea66a1b6a251835b"
+# txout_range = range(0,23)
+# txout_number = 8
+# for out in txout_range:
+#     host = RPCHost()
+#     response = host.call("gettxout", txout, out)
+
+def rpc_gettxout(tx_id, tx_out_num):
+    host = RPCHost()
+    response = host.call("gettxout", tx_id, tx_out_num)
+    return response
+
 
 
