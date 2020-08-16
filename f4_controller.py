@@ -1,4 +1,4 @@
-# a controller file will house the functions called by the view frames
+# a controller file will house the functions called by the application view frames
 
 
 # retrieves the utxo from the database wallet given the utxo database id
