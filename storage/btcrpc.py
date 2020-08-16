@@ -3,9 +3,10 @@
 #  
 from __future__ import print_function
 import time, requests, json
+from auth import RPC_USER, RPC_PASSWORD
 
 class RPCHost(object):
-    def __init__(self, rpc_user="satoshi", rpc_password="1350Redbud", node_address="192.168.1.15", node_port="8332"):
+    def __init__(self, rpc_user=RPC_USER, rpc_password=RPC_PASSWORD, node_address="192.168.1.15", node_port="8332"):
         self._session = requests.Session()
         self.rpc_user = rpc_user
         self.rpc_password = rpc_password
@@ -52,6 +53,35 @@ def rpc_gettxout(tx_id, tx_out_num):
     host = RPCHost()
     response = host.call("gettxout", tx_id, tx_out_num)
     return response
+
+
+
+from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+import sys
+sys.path.append('./programming_bitcoin_song/')
+from io import BytesIO
+from programming_bitcoin_song.tx import Tx, TxIn, TxOut
+
+class Connection(object):
+    # Connect to your node
+    # node is at 192.168.1.15:8332 on the local network
+    # use the user and password specified in the node's Bitcoin conf file
+    #
+    def __init__(self, user=RPC_USER, password=RPC_PASSWORD):
+        self.connection = AuthServiceProxy("http://%s:%s@192.168.1.15:8332"%(user, password))
+
+def get_raw_transaction(tx_id):
+    # best_block_hash = rpc_connection.getbestblockhash()
+    # print(rpc_connection.getblock(best_block_hash))
+    # "5b35e60862793746175d4444b35c092d2011615c327b42f1ea66a1b6a251835b"
+    # print(rpc_connection.getdifficulty())
+    node = Connection()
+    raw_tx_hex_string = node.connection.getrawtransaction(tx_id)
+    tx_byte = bytearray.fromhex(raw_tx_hex_string)
+    tx_stream = BytesIO(tx_byte)
+    # return a Tx object
+    tx = Tx.parse(tx_stream)
+    return tx
 
 
 
