@@ -1,3 +1,3 @@
 #Auth
-RPC_USER ="satoshi"
-RPC_PASSWORD="1350Redbud"
+RPC_USER ="user"
+RPC_PASSWORD="pass"

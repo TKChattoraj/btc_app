@@ -1,11 +1,14 @@
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+
 import sys
 sys.path.append('./programming_bitcoin_song/')
 from io import BytesIO
 from programming_bitcoin_song.tx import Tx, TxIn, TxOut
 
-rpc_user = "satoshi"
-rpc_password = "1350Redbud"
+# rpc_user = "satoshi"
+# rpc_password = "1350Redbud"
+rpc_user = "Titan"
+rpc_password = "MiniTrashMen"
 
 rpc_connection = AuthServiceProxy("http://%s:%s@192.168.1.15:8332"%(rpc_user, rpc_password))
 

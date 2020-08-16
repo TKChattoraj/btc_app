@@ -3,7 +3,7 @@
 #from tkinter import *
 import tkinter as tk
 from tkinter import ttk
-#from btcrpc import rpc_gettxout, get_raw_transaction
+
 from wallet_database import MyDatabase
 
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -14,13 +14,9 @@ from programming_bitcoin_song.tx import Tx, TxIn, TxOut, Connection, TxFetcher
 
 from io import BytesIO
 
-import os
-
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
-from programming_bitcoin_song.ecc import PrivateKey
-from programming_bitcoin_song.helper import encode_base58_checksum, hash160
-
+from f3_controller import make_keys, show_keys
 from f4_controller import create_tx, get_payees
 
 class ColumnInfo():
@@ -118,8 +114,6 @@ class F1Frame(ttk.Frame):
             widget.lift()
         self.db_name_entry.focus()
         
-
-
 
 class F2Frame(ttk.Frame):
     def __init__(self, master):
@@ -239,53 +233,13 @@ class F3Frame(ttk.Frame):
         #String Variables
 
         
-        ttk.Button(key_frame, text="Create Keys", command = self.get_keys).grid(column=0, row=1, sticky=tk.W)
+        ttk.Button(key_frame, text="Create Keys", command = lambda: make_keys(key_frame)).grid(column=0, row=1, sticky=tk.W)
 
-        ttk.Button(key_frame, text="Show Keys", command = lambda: self.show_keys(key_frame)).grid(column=1, row=1, sticky=tk.W)
+        ttk.Button(key_frame, text="Show Keys", command = lambda: show_keys(key_frame)).grid(column=1, row=1, sticky=tk.W)
 
-        
+        master.bind('<Return>', make_keys)
 
-        master.bind('<Return>', self.get_keys)
-
-    def get_keys(self, *args):
-        keys_array = []
-
-        for i in range(5):
-            try:
-                # generate the random private key as 32 bytes
-                private_key_bytes_generated = os.urandom(32)
-                # make the random 32 bytes into an integer
-                private_key_int = int.from_bytes(private_key_bytes_generated, byteorder='big', signed=False)
-                # create the private/public key object
-                key_object = PrivateKey(private_key_int)
-                # make the private key into 32 bytes from the key object private key (.secret) as an integer
-                private_key_bytes = key_object.secret.to_bytes(32, byteorder='big', signed=False)
-                # make the public key in compressed sec format
-                public_key_bytes = key_object.point.sec()
-                keys_array.append((private_key_bytes, public_key_bytes))
-            except ValueError:
-                pass
-        print(keys_array)
-        wallet = MyDatabase("wallet")
-        wallet.insert_keys(keys_array)
-
-    def show_keys(self, *args):
-        wallet = MyDatabase("wallet")
-        # key_pairs is an array of tuples...(private_key, public_key)
-        # private_key is a blob in wif format, public_key is a blob in sec
-        master = args[0]
-        key_pairs = wallet.retrieve_keys()
-        print(key_pairs)
-        ttk.Label(master, text="Private Keys:").grid(column=0, row=3, sticky=tk.W)
-        ttk.Label(master, text="Public Keys:").grid(column=1, row=3, sticky=tk.W)
-        # show the private key (as hex of bytes making up the private key)
-        # show the public key (as hex of the bytes in sec compressed format)
-        for i, key in enumerate(key_pairs):
-            print(len(key[0]))
-            ttk.Label(master, text=key[0].hex()).grid(column=0, row=4+i, sticky=tk.W)
-            print(len(key[1]))
-
-            ttk.Label(master, text=key[1].hex()).grid(column=1, row=4+i, sticky=tk.W)
+    
 
 class F4Frame(ttk.Frame):
     
