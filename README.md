@@ -1,2 +1,2 @@
-# btcrpc
-Bitcoin RPC
+# btc_app
+Bitcoin Wallet
