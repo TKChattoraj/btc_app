@@ -2,6 +2,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+
+
 import f4_controller
 
 
@@ -15,15 +17,15 @@ def show_possible_payees(frame, possible_payee_addresses):
 
         #
         #  element is a tuple element (db_id, address)
-        db_id = element[0]
+        keys_db_id = element[0]
         address = element[1]
         amount = tk.IntVar()
         amount.set(0)
-        
+
         ttk.Label(master, text=address).grid(column =0, row =3+i, sticky=tk.W)
         amount_entry = ttk.Entry(master, width = 16, textvariable=amount)
         amount_entry.grid(column=1, row=3+i, stick=tk.W)
-        address_amount_array.append((db_id, address, amount))
+        address_amount_array.append((keys_db_id, address, amount))
 
     ttk.Button(master, text="Create Tx", command = lambda: f4_controller.create_tx(master, address_amount_array)).grid(column=3, row=len(address_amount_array)+4)
 
@@ -48,7 +50,7 @@ def show_possible_payees(frame, possible_payee_addresses):
 #         ttk.Label(master, text=item[1].get()).grid(column =1, row=11+i, sticky=tk.W)
 
 def show_serialized_tx(master, tx_serialized_hex):
-     ttk.Label(master, text= tx_serialized_hex).grid(column =0, row = 15, sticky=tk.W)
+     ttk.Label(master, text= tx_serialized_hex).grid(column =0, row = 20, sticky=tk.W)
 
 
 #

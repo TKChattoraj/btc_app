@@ -6,6 +6,7 @@ import json
 import requests
 
 from ecc import PrivateKey
+
 from helper import (
     encode_varint,
     hash256,
@@ -37,9 +38,9 @@ class Connection(object):
 
 
 class TxFetcher:
-    """  Modified TxFetcher 
+    """  Modified TxFetcher
             For testnet:  go to blockcypher.com
-            For mainnet:  go to local node. 
+            For mainnet:  go to local node.
     """
     cache = {}
 
@@ -56,15 +57,15 @@ class TxFetcher:
     def fetch(cls, tx_id, testnet=False, fresh=False):
         #if fresh or (tx_id not in cls.cache):
         print("***************in fetch**************")
-        if True:                          
+        if True:
             #  Following is the url formating and request for programmingbitcoin.com
-            # url = '{}/tx/{}.hex'.format(cls.get_url(testnet), tx_id)    
+            # url = '{}/tx/{}.hex'.format(cls.get_url(testnet), tx_id)
             # response = requests.get(url)
-            
+
             #  Following is the request for  blockcypher.com
             #  Note:  Need to figure out how to get the raw hex from a mainnet transaction.  Need to look at the blockcypher api as
             #  it doesn't seem as though the option for creating a "hex" json key exists as it does in testnet.
-            
+
             # !
             # will need to re-configure retrieving a testnet tx from the local bitcoin node
             # !
@@ -87,33 +88,33 @@ class TxFetcher:
                 print(raw_tx_hex_string)
                 print("end raw hex of tx")
 
-                
+
                 raw = bytes.fromhex(raw_tx_hex_string)
                 tx = Tx.parse(BytesIO(raw), testnet=testnet)
                 #tx_stream = BytesIO(raw)
                 # return a Tx object
                 #tx = Tx.parse(tx_stream)
-            
+
 
                 #url = "{}{}?limit=50&includeHex=true".format(cls.get_url(testnet), tx_id)
-            
+
             # get_response = requests.get(url)
             # response = get_response.json()
             # #raw tex (in hex) of the retrieved transaction.
             # raw_tx = response["hex"]
-  
+
             # try:
             #     # Following is converting hex string to bytes as per the programming bitcoin way
             #     #raw = bytes.fromhex(response.text.strip())
-                
+
             #     raw = bytes.fromhex(raw_tx.strip())
-                
+
             # except ValueError:
             #     raise ValueError('unexpected response: {}'.format(response.text))
             # make sure the tx we got matches to the hash we requested
 
-            # ! 
-            # The following 'if' seems to remove the segwit marker and segwit flag, but the parse methods now include the possibility of 
+            # !
+            # The following 'if' seems to remove the segwit marker and segwit flag, but the parse methods now include the possibility of
             # segwit and so this seems to not be needed or appropriate anymore.
             # !
             # if raw[4] == 0:
@@ -126,7 +127,7 @@ class TxFetcher:
             #     tx = Tx.parse(BytesIO(raw), testnet=testnet)
             #!
 
-            
+
             if tx.id() != tx_id:
                 raise ValueError('not the same id: {} vs {}'.format(tx.id(), tx_id))
             cls.cache[tx_id] = tx
@@ -169,7 +170,7 @@ class Tx:
         self._hash_prevouts = None
         self._hash_sequence = None
         self._hash_outputs = None
-    
+
 
     def __repr__(self):
         tx_ins = ''
@@ -186,7 +187,7 @@ class Tx:
             self.locktime
         )
 
- 
+
     def id(self):
         '''Human-readable hexadecimal of the transaction hash'''
         return self.hash().hex()
@@ -194,7 +195,7 @@ class Tx:
     def hash(self):
         '''Binary hash of the legacy serialization'''
         return hash256(self.serialize_legacy())[::-1]
-    
+
     @classmethod
     def parse(cls, s, testnet=False):
         s.read(4)
@@ -203,7 +204,7 @@ class Tx:
         print(marker)
         if marker == b'\x00':
             parse_method = cls.parse_segwit
-        else: 
+        else:
             parse_method = cls.parse_legacy
         s.seek(-5, 1)
         return parse_method(s, testnet=testnet)
@@ -285,7 +286,7 @@ class Tx:
             return self.serialize_segwit()
         else:
             return self.serialize_legacy()
-    
+
     def serialize_legacy(self):
         '''Returns the byte serialization of the transaction'''
         # serialize version (4 bytes, little endian)
@@ -327,7 +328,7 @@ class Tx:
 
         # serialise the wtiness field
         for tx_in in self.tx_ins:
-            #  tx_in_witness_len is the number of elements in the tx_in 
+            #  tx_in_witness_len is the number of elements in the tx_in
             #  witness field.
             tx_in_witness_len = len(tx_in.witness)
             #  encoding the length of the tx_in.witness to little endian
@@ -340,16 +341,16 @@ class Tx:
             #
             for item in tx_in.witness:
                 # Witness field is an array, composed of either integers or bytes
-                # These seem like script, but segwit github expressly says the witness 
+                # These seem like script, but segwit github expressly says the witness
                 # field is not script.
 
                 # This if statement suggests some logic in the witness field array
-                # instead of it just being an array of bytes.  Ultimately, that is 
+                # instead of it just being an array of bytes.  Ultimately, that is
                 # what the witness field seems to be but putting in some logic now
-                # as it potentially being an integer depends on how the witness filed 
+                # as it potentially being an integer depends on how the witness filed
                 # items are dealt with--probably in the script eval portion--that
                 # building a stack with witenss items--those have to be interpreted somehow.
-                # The "else" part below is the only thing needed if the witenss field doesn't 
+                # The "else" part below is the only thing needed if the witenss field doesn't
                 # have any logic at this point--that its just an array of bytes.
 
                 if type(item) == int:
@@ -397,17 +398,17 @@ class Tx:
         # add SIGHASH_ALL using int_to_little_endian in 4 bytes
         # hash256 the serialization
         # convert the result to an integer using int.from_bytes(x, 'big')
-        ''' 
+        '''
         modified_tx = copy.deepcopy(self)
-        for i in range(len(modified_tx.tx_ins)):  
+        for i in range(len(modified_tx.tx_ins)):
             if i == input_index:
                 # if the input being signed is p2sh:
                 if redeem_script:
-                    modified_tx.tx_ins[i].script_sig = redeem_script 
-                # if not p2sh then assuming p2pkh      
+                    modified_tx.tx_ins[i].script_sig = redeem_script
+                # if not p2sh then assuming p2pkh
                 else:
                     # fetch the input transaction specified in the txi and get the script public key--a Script object
-                    modified_tx.tx_ins[i].script_sig = modified_tx.tx_ins[i].script_pubkey(testnet = self.testnet)         
+                    modified_tx.tx_ins[i].script_sig = modified_tx.tx_ins[i].script_pubkey(testnet = self.testnet)
             else:
                 modified_tx.tx_ins[i].script_sig = Script()
 
@@ -416,9 +417,9 @@ class Tx:
         modified_tx_serialized += int_to_little_endian(1,4)
         print(modified_tx_serialized)
         z = hash256(modified_tx_serialized)
-        
+
         z = int.from_bytes(z, 'big')
-            
+
         return z
 
 
@@ -463,7 +464,7 @@ class Tx:
         if witness_script:
             script_code = witness_script.serialize()
         # If there is a redeem_script, then the situation is a p2sh-p2wpkh.
-        # Make the script_code from the hash in the redeem_script-which is the 
+        # Make the script_code from the hash in the redeem_script-which is the
         # 20-byte public key hash.
         elif redeem_script:
             script_code = p2pkh_script(redeem_script.cmds[1]).serialize()
@@ -479,13 +480,13 @@ class Tx:
         s += int_to_little_endian(SIGHASH_ALL, 4) # applicable to all tx_ins in this tx
         print("****** out sig_hash_bip143")
         return int.from_bytes(hash256(s), 'big')
-            
+
 
     def verify_input(self, input_index):
         '''Returns whether the input has a valid signature'''
         # get the relevant transaction input
         txi = self.tx_ins[input_index]
-        
+
         # grab the previous (utxo) ScriptPubKey--"fetch's the utxo's script_pubkey"
         prev_script_pubkey = txi.script_pubkey(testnet = self.testnet)
         # is the script_pubkey a p2sh?
@@ -495,7 +496,7 @@ class Tx:
             redeem_script_command = txi.script_sig.cmds[-1]
             # prepend the redeem_script_bytes with its length
             redeem_script_serialized = encode_varint(len(redeem_script_command)) + redeem_script_command
-            
+
             # create the redeem_script as a script object
             redeem_script = Script.parse(BytesIO(redeem_script_serialized))
             if redeem_script.is_p2wpkh_script_pubkey():
@@ -510,8 +511,8 @@ class Tx:
             else:
                 z = self.sig_hash(input_index = input_index, redeem_script = redeem_script)
                 witness = None
-        
-        else: 
+
+        else:
             if prev_script_pubkey.is_p2wpkh_script_pubkey():
                 print("p2wpkh")
                 z= self.sig_hash_bip143(input_index)
@@ -521,7 +522,7 @@ class Tx:
             elif prev_script_pubkey.is_p2wsh_script_pubkey():
                 print("p2wsh")
                 cmd = txi.witness[-1]
-                raw_witness = encode_varint(len(cmd)) + cmd 
+                raw_witness = encode_varint(len(cmd)) + cmd
                 witness_script = Script.parse(BytesIO(raw_witness))
                 z = self.sig_hash_bip143(input_index, witness_script=witness_script)
                 witness = txi.witness
@@ -561,7 +562,7 @@ class Tx:
 
 ##  If spending a segwit utxo then --will need to look at the form of the utxo script pubkey
 ##      z = self.sig_hash_bip143
-##  else 
+##  else
 
         z = self.sig_hash(input_index)
 
@@ -583,7 +584,7 @@ class Tx:
         verify = self.verify_input(input_index)
         print(verify)
         return verify
-           
+
         #raise NotImplementedError
 
     def sign_all_inputs(self, utxo_array):
@@ -601,7 +602,7 @@ class Tx:
             return False
         # grab the first input
         # check that first input prev_tx is b'\x00' * 32 bytes
-        
+
         # check that first input prev_index is 0xffffffff
         if self.tx_ins[0].prev_index != 0xffffffff:
             return False
@@ -731,8 +732,8 @@ class TxOut:
         # serialize the script_pubkey
         result += self.script_pubkey.serialize()
         return result
-    
-    
+
+
 
 
 class TxTest(TestCase):

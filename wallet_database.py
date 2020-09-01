@@ -2,6 +2,11 @@ from Crypto.Random import random
 import sqlite3
 import math
 
+import sys
+sys.path.append('./programming_bitcoin_song/')
+#from programming_bitcoin_song.tx import Tx, TxIn, TxOut, Connection, TxFetcher
+from programming_bitcoin_song.ecc import PrivateKey
+
 class MyDatabase:
     """
         create database at 'name'.db file
@@ -13,7 +18,7 @@ class MyDatabase:
             self.cursor = self.connection.cursor()
             self.name = name
             #self.cursor.close()
-            
+
         except sqlite3.Error as error:
             print("Error while connecitng to sqlite", error)
         # finally:
@@ -30,9 +35,9 @@ class MyDatabase:
         qry_str = ""
         for col in column_array:
             qry_str += ", %s %s"%(col[0], col[1])
-        
+
         sqlite_create_table_querry = """ CREATE TABLE %s (id INTEGER PRIMARY KEY%s ); """%(name, qry_str)
-        try:           
+        try:
             self.cursor.execute(sqlite_create_table_querry)
             self.connection.commit()
             print("SQLite table created")
@@ -42,7 +47,7 @@ class MyDatabase:
 
     def insert_keys(self, keys_array):
         # key_array needs to be an array of tuples [(private_key, public_key), (), ()....()]
-        # private_key is a blob--32 bytes 
+        # private_key is a blob--32 bytes
         # public_key is a blob
 
         insert_keys_querry = """ INSERT INTO keys (private_key, public_key, status) VALUES(?,?,?)"""
@@ -60,12 +65,12 @@ class MyDatabase:
     #     for pair in key_pairs:
     #         try:
     #             self.cursor.execute(update_public_keys_querry, (pair[0], pair[1], pair[0]))
-                
+
     #         except sqlite3.Error as error:
     #             print("Error updating the public_keys ", error)
     #     self.connection.commit()
     #     self.cursor.close()
-            
+
     def retrieve_keys(self):
         retrieve_keys_querry = """ SELECT private_key, public_key FROM keys """
         key_pair_array = []
@@ -82,22 +87,37 @@ class MyDatabase:
 
     def retrieve_keys_for_payee(self):
         print("in retrieve keys")
-        retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where status= ?"""
-        status = "available"
+        retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where utxo_id IS NULL"""
+
         try:
-            retrieved_keys = self.cursor.execute(retrieve_payee_keys_querry, (status,)).fetchall()
-            self.connection.commit()
-            self.cursor.close()
-            print(retrieved_keys)
-            return retrieved_keys
+            retrieved_keys = self.cursor.execute(retrieve_payee_keys_querry).fetchall()
+
         except sqlite3.Error as error:
             print("Error while retrieving possible payees", error)
-    
+        self.connection.commit()
+        self.cursor.close()
+        print(retrieved_keys)
+        return retrieved_keys
+
+    def retrieve_keys_for_utxo_db_id(self, utxo_id):
+        print("in retrieve keys for utxo_db_id")
+        retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where utxo_id = ?"""
+
+        try:
+            retrieved_keys = self.cursor.execute(retrieve_payee_keys_querry, (utxo_id,)).fetchall()
+        except sqlite3.Error as error:
+            print("Error while retrieving possible payees", error)
+
+        self.connection.commit()
+        self.cursor.close()
+        print(retrieved_keys)
+        return retrieved_keys
+
     def retrieve_change_key(self):
         print("In retrieve change key")
         retrieve_change_key_querry = """ SELECT id, private_key, public_key FROM keys where status = ? """
         status = "available"
-        try: 
+        try:
             retrieve_change_key = self.cursor.execute(retrieve_change_key_querry, (status,)).fetchone()
             print("printing retrieved: {}".format(retrieve_change_key))
             print("printing inside tuple:  {}".format(retrieve_change_key[1]))
@@ -106,13 +126,13 @@ class MyDatabase:
             return retrieve_change_key # returning a tuple:  (id, private_key, public_key)
         except sqlite3.Error as error:
             print("Error while retrieving change key")
-            
 
 
 
 
 
-    # given the index, keys will return the appropriate private and public keys from the database 
+
+    # given the index, keys will return the appropriate private and public keys from the database
     # note:  this procedure is very similar to retriev_keys and so we might need to consolodate
     # maybe not, though as this is a different querry--we'll see.
     #
@@ -129,35 +149,31 @@ class MyDatabase:
         except sqlite3.Error as error:
             print("Error while retrieving keys ", error)
 
-    def update_utxo(self, utxo_id, utxo_index, utxo_amount, id):
+    def update_utxo(self, utxo_list):
+        """
+            args:  list of tuples (utxo_id, utxo_index, utxo_amount, id)
+                    list[0] is utxo_id
+                    list[1] is utxo_index
+                    list[2] is utxo_amount
+                    list[3] is database id
+
+            returns:
+
+        """
         update_utxo_querry = """ UPDATE keys SET utxo_id = ?, out_index = ?, amount = ? WHERE id = ? """
+
         try:
-            self.cursor.execute(update_utxo_querry, (utxo_id, utxo_index, utxo_amount, id))
-            
+            self.cursor.executemany(update_utxo_querry, utxo_list)
+
         except sqlite3.Error as error:
             print("Error updating the utxos ", error)
         self.connection.commit()
         self.cursor.close()
 
-    def update_wallet_status_ready(self, array):
-        # array is tuple of items
-        # item[0] is the db_id
-        # item[1] is the address
-        # item[2] is the IntVar so item[2].get() is the amount value
-        update_status_ready_querry = """ UPDATE keys SET status = ? WHERE id =? """
-        status = "ready"
-        querry_data_list = [(status, item[0]) for item in array]
-        print("querry data list: {}".format(querry_data_list))
-        try:
-            self.cursor.executemany(update_status_ready_querry, querry_data_list)
-        except sqlite3.Error as error:
-            print("Error updating the ready status ", error)
-        self.connection.commit()
-        self.cursor.close()
-
 
     def get_utxo(self, id):
-        get_utxo_querry ="""SELECT utxo_id, out_index, amount FROM keys where id = ? """
+
+        get_utxo_querry ="""SELECT utxo_hash, out_index, amount FROM utxo where id = ? """
         try:
             utxo_result=self.cursor.execute(get_utxo_querry, (id,)).fetchall()
             self.connection.commit()
@@ -169,14 +185,17 @@ class MyDatabase:
             self.cursor.close()
 
     def get_utxo_row(self, id):
-        get_utxo_row_querry ="""SELECT * FROM keys where id = ? """
+
+        get_utxo_row_querry ="""SELECT * FROM utxo where id = ? """
         try:
+            # utxos_result will be an array of tuples each
+            # (id, utxo_hash, out_index, amount, status)
             utxo_result=self.cursor.execute(get_utxo_row_querry, (id,)).fetchone()
             self.connection.commit()
             self.cursor.close()
             print("printing utxo result")
             print(utxo_result, utxo_result[0])
-            return(utxo_result[0], utxo_result[1], utxo_result[2], utxo_result[3], utxo_result[4], utxo_result[5])
+            return(utxo_result[0], utxo_result[1], utxo_result[2], utxo_result[3], utxo_result[4])
         except sqlite3.Error as error:
             print("Error getting the utxo ", error)
             self.connection.commit()
@@ -185,16 +204,167 @@ class MyDatabase:
 
     # retrieve from the wallet database those rows that are actual utxos, i.e. having tx_ids, but not spent
     def get_utxo_rows(self):
-        get_utxo_rows_querry ="""SELECT * FROM keys where status = ? """
+
+
+        get_utxo_rows_querry = """SELECT * FROM utxo where status = ? """
         try:
+            # utxos_result_array will be an array of tuples each
+            # (id, utxo_hash, out_index, amount, status)
             utxos_result_array=self.cursor.execute(get_utxo_rows_querry, ('utxo',)).fetchall()
-            self.connection.commit()
-            self.cursor.close()
             print("printing utxo result")
             print(utxos_result_array)
-            return(utxos_result_array)
         except sqlite3.Error as error:
             print("Error getting the utxos ", error)
+
+        self.connection.commit()
+        self.cursor.close()
+        return(utxos_result_array)
+
+    @classmethod
+    def update_db_utxo_table_spent(cls, input_update_arg):
+
+        # print(input_update_arg)
+        # print(type(input_update_arg[0][0]))
+        # print(type(input_update_arg[0][1]))
+        # utxo_row=self.get_utxo_row(1)
+        # print(utxo_row)
+        #
+        # print(utxo_row[1] == input_update_arg[0][0])
+        wallet = cls("wallet")
+        input_arg = [("spent", arg[0], arg[1]) for arg in input_update_arg]
+
+        print (input_arg)
+        #update_status_querry = """ UPDATE utxo SET status = ? WHERE utxo_hash = ? AND out_index = ? """
+        update_querry = """ UPDATE utxo SET status = ? WHERE id = ? """
+        arg = ("spent", 1)
+        try:
+            print("trying...")
+            #update_status_result = self.cursor.executemany(update_status_querry, input_arg)
+            wallet.cursor.execute(update_querry, arg)
+            wallet.connection.commit()
+            wallet.cursor.close()
+            print("updated status supposedly")
+            #return(update_status_result)
+        except sqlite3.Error as error:
+            print("Error updating utxo table status")
+            wallet.cursor.close()
+
+
+    def update_just_hash(self):
+
+        update_querry = """ UPDATE utxo SET utxo_hash = ? WHERE id = ? """
+
+        hash_data = [(bytes.fromhex('1379573a272bc1d5b2c6ddf82f0a653d1acb3539f6ee231e2f1c2ed1243812b3'), 1), (bytes.fromhex('0aa127db5e775571f1919bccddc9ef4e52aa3785585a5a26d42fb7282e6ac992'), 2), (bytes.fromhex('0aa127db5e775571f1919bccddc9ef4e52aa3785585a5a26d42fb7282e6ac992'), 3), (bytes.fromhex('0aa127db5e775571f1919bccddc9ef4e52aa3785585a5a26d42fb7282e6ac992'), 4)]
+
+        try:
+            self.cursor.executemany(update_querry, hash_data)
             self.connection.commit()
             self.cursor.close()
+        except sqlite3.Error as error:
+            print("Error while updating just the utxo hash ", error)
 
+    @classmethod
+    def update_utxo_for_utxo(cls, t):
+        # t is tuple (tx_hash, [[addresses]])
+        # The index of the address list corresponds to the output index of the tx.
+        wallet = cls("wallet")
+        tx_hash = t[0]
+        addresses_array = t[1] # each item in the addresses_array is an array of addresses
+        print("First addresses array: {}".format(addresses_array))
+        data = []
+        retrieve_data = []
+        for i, addresses in enumerate(addresses_array):
+            data_tuple = ("utxo", bytes.fromhex(tx_hash), i)
+            retrieve_tuple = (bytes.fromhex(tx_hash), i)
+            data.append(data_tuple)
+            retrieve_data.append(retrieve_tuple)
+
+
+        update_querry = """ UPDATE utxo SET status = ? WHERE utxo_hash = ? AND out_index = ? """
+        retrieve_querry = """ SELECT * FROM utxo where status = ? """
+        print(data)
+        try:
+            wallet.cursor.executemany(update_querry, data)
+            wallet.connection.commit()
+            wallet.cursor.close()
+            print("updated utxo for utxo")
+        except sqlite3.Error as error:
+            print("Error while updating the utxo for utxo")
+            wallet.cursor.close()
+
+        wallet = cls("wallet")
+
+        try:
+            utxo_id_array = wallet.cursor.execute(retrieve_querry, ("utxo",)).fetchall()
+            wallet.connection.commit()
+            print(utxo_id_array)
+            wallet.cursor.close()
+            print("retrieved utxo ids")
+        except sqlite3.Error as error:
+            print("Error while retrieving the utxo ids")
+            wallet.cursor.close()
+
+        update_keys_input = []
+        print("second address array: {}".format(addresses_array))
+
+        for i, a in enumerate (addresses_array):
+            print(i, a)
+            print("Addresses: {}".format(a))
+            print("i: {}".format(i))
+
+            out_index = i
+            for utxo in utxo_id_array:
+                if utxo[2] == out_index:
+                    input_tuple = (a, utxo[0])
+                    update_keys_input.append(input_tuple)
+        print(update_keys_input)
+        return(update_keys_input)
+
+    @classmethod
+    def update_keys_for_utxos(cls, update_keys_input):
+        wallet = cls("wallet")
+        # key_array is array of tuples (db_id, private_key, public_key)
+        key_array = wallet.retrieve_keys_for_payee()
+
+        # make list of possible payee adresses:
+        #
+        possible_payee_addresses = []
+        for key in key_array:
+            private_key = int.from_bytes(key[1], byteorder='big', signed=False)
+            #
+            # generate the public key from the private key retrieved in the database
+            #
+
+            key_object = PrivateKey(private_key)
+
+            # produce the public key address
+
+            public_key_address = key_object.point.address(testnet=True)
+
+            # create array of tuples (db_id associated with private_key that make the public_key_address, public_key-address)
+            possible_payee_addresses.append((key[0], public_key_address))
+        print("addresses from db: {}".format(possible_payee_addresses))
+
+        keys_data = []
+        for utxo in update_keys_input:
+            addresses = utxo[0]
+            for address in addresses:
+                for db_address in possible_payee_addresses:
+                    if db_address[1] == address:
+                        # this will be the tuple of (utxo_table_id, keys_table_id)
+                        # will need to update keys table with the appropriate utxo_id_array
+                        tuple=(utxo[1], db_address[0])
+                        keys_data.append(tuple)
+        print(keys_data)
+        print("type: {} {}".format(type(keys_data[0][0]), type(keys_data[0][1])))
+
+        wallet = cls("wallet")
+        update_keys_querry = """ UPDATE keys SET utxo_id = ? WHERE id = ? """
+        try:
+            wallet.cursor.executemany(update_keys_querry, keys_data)
+            wallet.connection.commit()
+            wallet.cursor.close()
+            print("updated keys for utxo_d")
+        except sqlite3.Error as error:
+            print("Error while updating the keys for utxo_id")
+            wallet.cursor.close()
