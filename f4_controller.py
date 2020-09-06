@@ -18,6 +18,7 @@ from programming_bitcoin_song.ecc import PrivateKey
 from f4_model import TxFactory, Utxo, grab_address, push_raw_tx
 from f4_model import update_utxo_for_spent, sort_pushed_tx_for_utxo_update
 from f4_model import update_db_for_utxo, update_db_keys_utxos
+from f4_model import inputs_for_new_utxos, inputs_for_utxo_spents
 
 import f4_view
 
@@ -119,15 +120,29 @@ def create_tx(master, array):
     #
     # Call method to update the wallet based on the new pushed tx
     # In the utxo table, the tx_ins would need to be status as "spent"
-    # and the tx_outs would need to be status as "utxo."
+    # and the tx_outs would need to be added to the utxo table_name
+    # and status as "utxo."
     # In the keys table, the keys used for the outputs would need to
     # reference the associated utxo--the keys table utxo_id would need to
     # point to the appropriate utxo table id.
     #
 
-    update_utxo_for_spent(pushed_tx)
-    keys_update_input=update_db_for_utxo(pushed_tx)
-    update_db_keys_utxos(keys_update_input)
+    # update_utxo_for_spent
+    i = inputs_for_utxo_spents(pushed_tx)
+    print(i)
+    MyDatabase.update_utxo_table_spent(i)
+
+    # update utxo for new utxo_script_pubkey
+    n = inputs_for_new_utxos(pushed_tx)
+    print(n)
+    MyDatabase.insert_new_utxos(n)
+
+    # retrieve utxo table ids for output addresses_array
+
+    utxo_ids_addresses = MyDatabase.retrieve_utxo_ids(n)
+    print(utxo_ids_addresses)
+    # utxo_ids_addresses is a list of tuples ([addresses], utxos_id)
+    MyDatabase.update_keys_for_utxos(utxo_ids_addresses)
 
 
 

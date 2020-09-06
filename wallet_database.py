@@ -221,32 +221,45 @@ class MyDatabase:
         return(utxos_result_array)
 
     @classmethod
-    def update_db_utxo_table_spent(cls, input_update_arg):
+    def update_utxo_table_spent(cls, input_update_arg):
 
-        # print(input_update_arg)
-        # print(type(input_update_arg[0][0]))
-        # print(type(input_update_arg[0][1]))
-        # utxo_row=self.get_utxo_row(1)
-        # print(utxo_row)
+        # input_update_arg is a list of tuples: (utxo_hash in bytes, out_index, amount)
         #
-        # print(utxo_row[1] == input_update_arg[0][0])
         wallet = cls("wallet")
-        input_arg = [("spent", arg[0], arg[1]) for arg in input_update_arg]
+        input_arg = [("spent", arg[0], arg[1], arg[2]) for arg in input_update_arg]
 
-        print (input_arg)
-        #update_status_querry = """ UPDATE utxo SET status = ? WHERE utxo_hash = ? AND out_index = ? """
-        update_querry = """ UPDATE utxo SET status = ? WHERE id = ? """
-        arg = ("spent", 1)
+        update_status_querry = """ UPDATE utxo SET status = ? WHERE utxo_hash = ? AND out_index = ? And amount = ? """
+
         try:
-            print("trying...")
-            #update_status_result = self.cursor.executemany(update_status_querry, input_arg)
-            wallet.cursor.execute(update_querry, arg)
+            print("trying to update utxo for spent...")
+            wallet.cursor.executemany(update_status_querry, input_arg)
             wallet.connection.commit()
             wallet.cursor.close()
-            print("updated status supposedly")
-            #return(update_status_result)
+            print("updated utxo for spent")
         except sqlite3.Error as error:
             print("Error updating utxo table status")
+            wallet.cursor.close()
+
+    @classmethod
+    def insert_new_utxos(cls, new_utxos):
+        # new_utxos is a tuple: tx_hash in byets, list of tuples: ([addresses], amount)
+        # index of second tuple corresponds to the output index of the pushed tx
+
+        insert_utxos_querry = """ INSERT INTO  utxo (utxo_hash, out_index, amount, status) VALUES (?, ?, ?, ?) """
+        tx_hash = new_utxos[0]
+        outputs = new_utxos[1]
+
+        status = "utxo"
+        insert_data_list = []
+        for out_index, out in enumerate(outputs):
+            insert_data_list.append((tx_hash, out_index, out[1], status))
+        wallet = cls("wallet")
+        try:
+            wallet.cursor.executemany(insert_utxos_querry, insert_data_list)
+            wallet.connection.commit()
+            wallet.cursor.close()
+        except sqlite3.Error as error:
+            print("Error while inserting new utxos ", error)
             wallet.cursor.close()
 
 
@@ -265,7 +278,7 @@ class MyDatabase:
 
     @classmethod
     def update_utxo_for_utxo(cls, t):
-        # t is tuple (tx_hash, [[addresses]])
+        # t is tuple (tx_hash, [([addresses], output amounts)])
         # The index of the address list corresponds to the output index of the tx.
         wallet = cls("wallet")
         tx_hash = t[0]
@@ -297,6 +310,7 @@ class MyDatabase:
         try:
             utxo_id_array = wallet.cursor.execute(retrieve_querry, ("utxo",)).fetchall()
             wallet.connection.commit()
+            print("****************** utxo_id_array********************")
             print(utxo_id_array)
             wallet.cursor.close()
             print("retrieved utxo ids")
@@ -314,8 +328,47 @@ class MyDatabase:
 
             out_index = i
             for utxo in utxo_id_array:
+                print("utxo[2]")
                 if utxo[2] == out_index:
                     input_tuple = (a, utxo[0])
+                    update_keys_input.append(input_tuple)
+        print(update_keys_input)
+        return(update_keys_input)
+
+    @classmethod
+    def retrieve_utxo_ids(cls, n):
+        # n is a tuple: tx_hash in byets, list of tuples: ([addresses], amount)
+        # index of second tuple corresponds to the output index of the pushed tx
+
+        tx_hash = n[0]
+        outputs = n[1]
+
+        status = "utxo"
+        retrieve_querry = """ SELECT * FROM utxo where utxo_hash = ? """
+        querry_data = (tx_hash,)
+
+        wallet = cls("wallet")
+
+        try:
+            db_utxo_list = wallet.cursor.execute(retrieve_querry, querry_data).fetchall()
+            wallet.connection.commit()
+            wallet.cursor.close()
+            print("****************** utxo_id_array********************")
+            print(db_utxo_list)
+
+            print("retrieved utxo ids")
+        except sqlite3.Error as error:
+            print("Error while retrieving the utxo ids")
+            wallet.cursor.close()
+
+        update_keys_input = []
+
+        for out_index, output in enumerate(outputs):
+            for utxo in db_utxo_list:
+                print("utxo[2]")
+                if utxo[2] == out_index and utxo[3] == output[1]:
+                    #input_tuple is (list of addresses, corresponding utxo id)
+                    input_tuple = (output[0], utxo[0])
                     update_keys_input.append(input_tuple)
         print(update_keys_input)
         return(update_keys_input)
@@ -343,10 +396,14 @@ class MyDatabase:
 
             # create array of tuples (db_id associated with private_key that make the public_key_address, public_key-address)
             possible_payee_addresses.append((key[0], public_key_address))
+        print("********************************")
         print("addresses from db: {}".format(possible_payee_addresses))
-
+        print("********************************")
+        print("update_keys_input: {}".format(update_keys_input))
         keys_data = []
         for utxo in update_keys_input:
+            # addresses is a list of addresses used for a specific output
+            # the list index corresponds to the tx output
             addresses = utxo[0]
             for address in addresses:
                 for db_address in possible_payee_addresses:

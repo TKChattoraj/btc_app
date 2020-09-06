@@ -316,7 +316,7 @@ def update_utxo_for_spent(pushed_tx):
     tx_inputs = pushed_tx['tx']['inputs']  # array of JSON for certain input values  see above example
     input_update_arg = []
     for input in tx_inputs:
-        input_update_arg = [(bytes.fromhex(input['prev_hash']), input['output_index'])]
+        input_update_arg.append((bytes.fromhex(input['prev_hash']), input['output_index']))
     MyDatabase.update_db_utxo_table_spent(input_update_arg)
 
 def sort_pushed_tx_for_utxo_update(pushed_tx):
@@ -335,3 +335,23 @@ def update_db_for_utxo(pushed_tx):
 
 def update_db_keys_utxos(keys_update_input):
     MyDatabase.update_keys_for_utxos(keys_update_input)
+
+def inputs_for_new_utxos(pushed_tx):
+    tx_hash = bytes.fromhex(pushed_tx['tx']['hash'])
+    # Create an array of tuples: ([addresses], amount)
+    # The [addresses] are a list of addresses associated with the output,
+    # amount is the amount of the outputs
+    # The indices of the array of tuples corresponds to the output index of the
+    # pushed transaction, i.e. outputs[0] is the 0th output of tx having tx_hash
+    #
+    outputs = [ (output['addresses'], output['value']) for output in pushed_tx['tx']['outputs']]
+    n = (tx_hash, outputs)
+    # where outputs is an array of tupls ([addresses], output value)]
+    # the index of the outputs array corresponds to the push_tx output index
+    return n
+
+def inputs_for_utxo_spents(pushed_tx):
+    inputs= pushed_tx['tx']['inputs']
+    spents_input = [(bytes.fromhex(input['prev_hash']), input['output_index'], input['output_value']) for input in inputs]
+
+    return(spents_input)
