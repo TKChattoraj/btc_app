@@ -205,7 +205,6 @@ class MyDatabase:
     # retrieve from the wallet database those rows that are actual utxos, i.e. having tx_ids, but not spent
     def get_utxo_rows(self):
 
-
         get_utxo_rows_querry = """SELECT * FROM utxo where status = ? """
         try:
             # utxos_result_array will be an array of tuples each
@@ -425,3 +424,13 @@ class MyDatabase:
         except sqlite3.Error as error:
             print("Error while updating the keys for utxo_id")
             wallet.cursor.close()
+
+    @classmethod
+    def wallet_amount(cls):
+        wallet = cls("wallet")
+        # utxo_rows is a list of tuples:  (id, utxo_hash, out_index, amount, status)
+        utxo_rows=wallet.get_utxo_rows()
+        amount = 0
+        for utxo in utxo_rows:
+            amount += utxo[3]
+        return amount

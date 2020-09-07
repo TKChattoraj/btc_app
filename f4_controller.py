@@ -18,7 +18,7 @@ from programming_bitcoin_song.ecc import PrivateKey
 from f4_model import TxFactory, Utxo, grab_address, push_raw_tx
 from f4_model import update_utxo_for_spent, sort_pushed_tx_for_utxo_update
 from f4_model import update_db_for_utxo, update_db_keys_utxos
-from f4_model import inputs_for_new_utxos, inputs_for_utxo_spents
+from f4_model import inputs_for_new_utxos, inputs_for_utxo_spents, calculate_wallet_amount
 
 import f4_view
 
@@ -144,7 +144,8 @@ def create_tx(master, array):
     # utxo_ids_addresses is a list of tuples ([addresses], utxos_id)
     MyDatabase.update_keys_for_utxos(utxo_ids_addresses)
 
-
-
     print("Pushed Tx: {}".format(pushed_tx))
     f4_view.show_serialized_tx(master, tx_serialized_hex)
+
+def calculate_btc_amount():
+    return calculate_wallet_amount()

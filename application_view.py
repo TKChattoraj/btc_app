@@ -17,7 +17,7 @@ from io import BytesIO
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 from f3_controller import make_keys, show_keys
-from f4_controller import create_tx, get_payees
+from f4_controller import create_tx, get_payees, calculate_btc_amount
 
 class ColumnInfo():
     def __init__(self, master):
@@ -28,14 +28,14 @@ class ColumnInfo():
         self.column_type = tk.StringVar()
         self.column_name_entry = ttk.Entry(master, width=25, textvariable=self.column_name)
         self.radio_text=ttk.Radiobutton(master, text="Text", variable=self.column_type, value="TEXT")
-       
+
         self.radio_int=ttk.Radiobutton(master, text="Integer", variable=self.column_type, value="INTEGER")
         self.radio_blob=ttk.Radiobutton(master, text="Blob", variable=self.column_type, value="BLOB")
 
         self.radio_numeric=ttk.Radiobutton(master, text="Numeric", variable=self.column_type, value="NUMERIC")
         self.radio_real=ttk.Radiobutton(master, text="Real", variable=self.column_type, value="REAL")
         self.column_name_entry.focus()
-        
+
 
 
 class F1Frame(ttk.Frame):
@@ -43,7 +43,7 @@ class F1Frame(ttk.Frame):
         super().__init__(master)
 
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        
+
         #String Variables
         self.db_name = tk.StringVar()
         self.table_name = tk.StringVar()
@@ -60,26 +60,26 @@ class F1Frame(ttk.Frame):
 
         ttk.Label(self, text="Table Column Name:").grid(column=0, row=4, sticky=tk.W)
         ttk.Label(self, text="Table Column Type:").grid(column=1, columnspan=5, row=4, sticky=tk.W)
-        
+
         self.add_column_button = ttk.Button(self, text="Add Column", command=self.add_column)
         self.create_table_button = ttk.Button(self, text="Create Table", command=self.create_table)
 
         self.column_info_list = []
-        
+
         self.add_column()
         self.widget_order()
 
     def display_buttons(self, row):
         row=row+1 # row for placement of Add Column button after the column_info_list
-        self.add_column_button.grid(column=5, row=row)        
+        self.add_column_button.grid(column=5, row=row)
         self.create_table_button.grid(column=6, row=row)
-        
+
 
     def add_column(self):
         self.column_info_list.append(ColumnInfo(self))
         self.display_columns()
 
-        
+
     def display_columns(self):
         row = 5  #This is the row location for the widgets--used for placing the column info widgets
         for index, c_info in enumerate(self.column_info_list):
@@ -90,13 +90,13 @@ class F1Frame(ttk.Frame):
             c_info.radio_blob.grid(column=3, row=row, sticky=tk.W)
             c_info.radio_numeric.grid(column=4, row=row, sticky=tk.W)
             c_info.radio_real.grid(column=5, row=row, sticky=tk.W)
-            
+
 
         self.display_buttons(row)
 
     def create_table(self):
         print("Creating table")
-        
+
         column_info_array = []
         for col in self.column_info_list:
             print("%s, %s"%(col.column_name.get(), col.column_type.get()))
@@ -113,7 +113,7 @@ class F1Frame(ttk.Frame):
         for widget in order:
             widget.lift()
         self.db_name_entry.focus()
-        
+
 
 class F2Frame(ttk.Frame):
     def __init__(self, master):
@@ -127,7 +127,7 @@ class F2Frame(ttk.Frame):
 
         #String Variables
         self.txid = tk.StringVar()
-        
+
 
         ttk.Label(tx_info_frame, text="Enter tx id (hex):").grid(column=0, row=0, sticky=tk.W)
 
@@ -135,10 +135,10 @@ class F2Frame(ttk.Frame):
         txid_entry = ttk.Entry(tx_info_frame, width = 64, textvariable = self.txid)
         txid_entry.grid(column=0, row=1, sticky=tk.W)
 
-        
+
         ttk.Button(tx_info_frame, text="Get tx", command = lambda: self.gettx(tx_info_frame)).grid(column=2, row=1, sticky=tk.W)
 
-        
+
 
         for child in tx_info_frame.winfo_children():
             child.grid_configure(padx=5, pady=5)
@@ -149,7 +149,7 @@ class F2Frame(ttk.Frame):
     def gettx(self, show_master):
         try:
             tx_id = str(self.txid.get())
-            
+
             #tx = get_raw_transaction(tx_id)
             tx = TxFetcher.fetch(tx_id)
             # as a stub display the amont of the 8th output
@@ -163,7 +163,7 @@ class F2Frame(ttk.Frame):
 
         show_frame = ttk.Frame(master, padding=(3,3,12,12))
         show_frame.grid(column=0, row=2, sticky=(tk.N, tk.W, tk.E, tk.S))
- 
+
         ttk.Label(show_frame, text="tx id: ").grid(column=0, row=2, sticky=tk.W)
         ttk.Label(show_frame, text=tx.id()).grid(column=1, row=2, sticky=tk.W)
 
@@ -171,7 +171,7 @@ class F2Frame(ttk.Frame):
         ttk.Label(show_frame, text=tx.version).grid(column=1, row=3, sticky=tk.W)
 
         ttk.Label(show_frame, text="input txs: ").grid(column=0, row=4, sticky=tk.W)
-        
+
         for i, input in enumerate(tx.tx_ins):
             ttk.Label(show_frame, text="input tx: ").grid(column=1, row=5+i, sticky=tk.W)
             ttk.Label(show_frame, text=input.prev_tx.hex()).grid(column=2, row=5+i, sticky=tk.W)
@@ -207,7 +207,7 @@ class F2Frame(ttk.Frame):
 
         # define starting row for output
         start = 6 + len(tx.tx_ins)
-        
+
         for i, output in enumerate(tx.tx_outs):
             ttk.Label(show_frame, text="amount: ").grid(column=1, row=start+i, sticky=tk.W)
             ttk.Label(show_frame, text=output.amount).grid(column=2, row=start+i, sticky=tk.W)
@@ -232,17 +232,17 @@ class F3Frame(ttk.Frame):
 
         #String Variables
 
-        
+
         ttk.Button(key_frame, text="Create Keys", command = lambda: make_keys(key_frame)).grid(column=0, row=1, sticky=tk.W)
 
         ttk.Button(key_frame, text="Show Keys", command = lambda: show_keys(key_frame)).grid(column=1, row=1, sticky=tk.W)
 
         master.bind('<Return>', make_keys)
 
-    
+
 
 class F4Frame(ttk.Frame):
-    
+
     def __init__(self, master):
         super().__init__(master)
 
@@ -250,17 +250,28 @@ class F4Frame(ttk.Frame):
         tx_frame['borderwidth'] =2
         tx_frame['relief'] = 'sunken'
         tx_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        
+
         #String Variables
 
-        ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=1, sticky=tk.W)
+        # Integer Variables
+        btc_amount = tk.IntVar()
+        a = calculate_btc_amount()
+        print("a:  {}".format(a))
+        btc_amount.set(calculate_btc_amount())
+        print("btc amount: {}".format(btc_amount.get()))
+        print("btc_amount type: {}".format(type(btc_amount.get())))
+
+        ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
+        ttk.Label(tx_frame, text= btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
+
+        ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
         master.bind('<Return>', get_payees)
-    
+
 class Notebook(ttk.Notebook):
     def __init__(self, master):
         super().__init__(master)
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.db_ops_frame = F1Frame(self)   
+        self.db_ops_frame = F1Frame(self)
         self.f2 = F2Frame(self)
         self.f3 = F3Frame(self)
         self.f4 = F4Frame(self)
@@ -275,5 +286,5 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        
+
         self.notebook = Notebook(self)

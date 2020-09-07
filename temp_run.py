@@ -106,60 +106,64 @@ pushed_tx = {'tx':
     "vout_sz": 2
 }
 }
+#
+# def update_db_for_utxo(pushed_tx):
+#     t=sort_pushed_tx_for_utxo_update(pushed_tx)
+#     update_utxo_for_utxo = MyDatabase.update_utxo_for_utxo(t)
+#     return update_utxo_for_utxo
+#
+# def update_db_keys_utxos(keys_update_input):
+#     MyDatabase.update_keys_for_utxos(keys_update_input)
+#
+#
+# def inputs_for_new_utxos(pushed_tx):
+#     tx_hash = bytes.fromhex(pushed_tx['tx']['hash'])
+#     # Create an array of tuples: ([addresses], amount)
+#     # The [addresses] are a list of addresses associated with the output,
+#     # amount is the amount of the outputs
+#     # The indices of the array of tuples corresponds to the output index of the
+#     # pushed transaction, i.e. outputs[0] is the 0th output of tx having tx_hash
+#     #
+#     outputs = [ (output['addresses'], output['value']) for output in pushed_tx['tx']['outputs']]
+#     n = (tx_hash, outputs)
+#     # where outputs is an array of tupls ([addresses], output value)]
+#     # the index of the outputs array corresponds to the push_tx output index
+#     return n
+#
+# def inputs_for_utxo_spents(pushed_tx):
+#     inputs= pushed_tx['tx']['inputs']
+#     spents_input = [(bytes.fromhex(input['prev_hash']), input['output_index'], input['output_value']) for input in inputs]
+#
+#     return(spents_input)
+#
+def calculate_wallet_amount():
+    wallet_amount = MyDatabase.wallet_amount()
+    print(wallet_amount)
+#
+#
+#
+#
+#
+#
+# # update_utxo_for_spent
+# i = inputs_for_utxo_spents(pushed_tx)
+# print(i)
+# MyDatabase.update_utxo_table_spent(i)
+#
+# # update utxo for new utxo_script_pubkey
+# n = inputs_for_new_utxos(pushed_tx)
+# print(n)
+# MyDatabase.insert_new_utxos(n)
+#
+# # retrieve utxo table ids for output addresses_array
+#
+# utxo_ids_addresses = MyDatabase.retrieve_utxo_ids(n)
+# print(utxo_ids_addresses)
+# # utxo_ids_addresses is a list of tuples ([addresses], utxos_id)
+# MyDatabase.update_keys_for_utxos(utxo_ids_addresses)
 
-def update_db_for_utxo(pushed_tx):
-    t=sort_pushed_tx_for_utxo_update(pushed_tx)
-    update_utxo_for_utxo = MyDatabase.update_utxo_for_utxo(t)
-    return update_utxo_for_utxo
 
-def update_db_keys_utxos(keys_update_input):
-    MyDatabase.update_keys_for_utxos(keys_update_input)
-
-
-def inputs_for_new_utxos(pushed_tx):
-    tx_hash = bytes.fromhex(pushed_tx['tx']['hash'])
-    # Create an array of tuples: ([addresses], amount)
-    # The [addresses] are a list of addresses associated with the output,
-    # amount is the amount of the outputs
-    # The indices of the array of tuples corresponds to the output index of the
-    # pushed transaction, i.e. outputs[0] is the 0th output of tx having tx_hash
-    #
-    outputs = [ (output['addresses'], output['value']) for output in pushed_tx['tx']['outputs']]
-    n = (tx_hash, outputs)
-    # where outputs is an array of tupls ([addresses], output value)]
-    # the index of the outputs array corresponds to the push_tx output index
-    return n
-
-def inputs_for_utxo_spents(pushed_tx):
-    inputs= pushed_tx['tx']['inputs']
-    spents_input = [(bytes.fromhex(input['prev_hash']), input['output_index'], input['output_value']) for input in inputs]
-
-    return(spents_input)
-
-
-
-
-
-
-# update_utxo_for_spent
-i = inputs_for_utxo_spents(pushed_tx)
-print(i)
-MyDatabase.update_utxo_table_spent(i)
-
-# update utxo for new utxo_script_pubkey
-n = inputs_for_new_utxos(pushed_tx)
-print(n)
-MyDatabase.insert_new_utxos(n)
-
-# retrieve utxo table ids for output addresses_array
-
-utxo_ids_addresses = MyDatabase.retrieve_utxo_ids(n)
-print(utxo_ids_addresses)
-# utxo_ids_addresses is a list of tuples ([addresses], utxos_id)
-MyDatabase.update_keys_for_utxos(utxo_ids_addresses)
-
-
-
+calculate_wallet_amount()
 
 
 # Tx Serialized: 010000000292c96a2e28b72fd4265a5a588537aa524eefc9ddcc9b91f17155775edb27a10a000000006b483045022100dc1c67c5850a2514cb1d0f1dc91d68a3b5bff6f07e9f3a042f2a45c56731958e02202dc093b9a9298ce1c0d232634c60eb76e0adac1cc5412ec86c0a19188933babb012103880464dae26caec050429b006e25bd9c04959d2eebf4f9f62d57de5888e2fad5ffffffff92c96a2e28b72fd4265a5a588537aa524eefc9ddcc9b91f17155775edb27a10a010000006a473044022033c0d498cc8952372e18915a84f07fe17e7ea8e04d2a3e2befc108c59d046b610220443871cfa45721b6383ade40be811db472f9d399f28576af8429eebc44cc67d6012103840eddc8de8c5b7fd50f37d3d52ff50166a909c2ffe16fc6b98da5ff62ec5eb0ffffffff02400d0300000000001976a9141cfbec8e963eef41f349c700a4c4f02ec3653fe788ac51c30000000000001976a914085ba10d4d0940e492c8fa7150db4d313b7179b888ac00000000

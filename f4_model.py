@@ -355,3 +355,8 @@ def inputs_for_utxo_spents(pushed_tx):
     spents_input = [(bytes.fromhex(input['prev_hash']), input['output_index'], input['output_value']) for input in inputs]
 
     return(spents_input)
+
+def calculate_wallet_amount():
+    wallet_amount = MyDatabase.wallet_amount()
+    print(wallet_amount)
+    return(wallet_amount)
