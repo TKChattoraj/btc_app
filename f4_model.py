@@ -2,7 +2,7 @@ from Crypto.Random import random
 import sqlite3
 import math
 
-from programming_bitcoin_song.tx import TxFetcher, TxTest, TxIn, TxOut, Tx
+from programming_bitcoin_song.tx import TxFetcher, TxIn, TxOut, Tx
 from programming_bitcoin_song.script import p2pkh_script
 from programming_bitcoin_song.helper import run, hash256, little_endian_to_int, decode_base58
 import programming_bitcoin_song.script
@@ -25,7 +25,7 @@ from blockcypher import pushtx
 
 
 class TxFactory:
-    def __init__(self, utxo_array=[], total_input_amount=0, output_array=[], total_paid_amount=0,fee=0, change_amount=0):
+    def __init__(self, utxo_array=[], total_input_amount=0, output_array=[], total_paid_amount=0, fee=0, change_amount=0):
         # utxo_array is an array of utxo factory objects--the inputs to making an output_array
         self.utxo_array = utxo_array
         self.total_input_amount = total_input_amount
@@ -41,13 +41,20 @@ class TxFactory:
             self.total_paid_amount += address[2].get()
 
 
-    def retrieve_utxos(self):
+    def create_factory_input_array(self):
         """
             Arguments:
 
 
             Return:
-                :list of utxo factory objects that will be spent
+                :list of utxo factory objects that will be used to
+                 create the TxIn list.
+
+            Potential Revision Note:
+                :Further Revisions:
+                    Will need to revise this method to accommodate the witness
+                    field if the input is a segwit.  But maybe that won't be
+                    required until input is signed.
         """
         #
         # Will need to retrive the utxo info from the database and then fetch the transaction
@@ -56,53 +63,35 @@ class TxFactory:
         #
 
         wallet = MyDatabase("wallet")
-        # get all wallet rows that could be potential utxos to spend, i.e. those with status="utxo"
         #
-
-        wallet_rows = wallet.get_utxo_rows()
+        # get all wallet rows that could be potential utxos to spend, i.e. those with status="utxo"
+        wallet_rows = wallet.get_utxo_rows()  #array of tupples (id, utxo_hash, out_index, amount, status)
         print("utxos: {}".format(wallet_rows))
 
-        pruned_wallet_rows = []  # this is the new list formed with just enough utxos to pay the total_paid_amount
-        print("********Doing the amounts*********")
+        pruned_wallet_rows = []  # this is the new list formed with just enough utxos to pay the total_paid_amount and fee
+
         for utxo in wallet_rows:
-            print("total input amount before: {}".format(self.total_input_amount))
-            print("total_paid amount before: {}".format(self.total_paid_amount))
-            if self.total_input_amount <= self.total_paid_amount:
+            if self.total_input_amount <= self.total_paid_amount + 100000:  #assuming not more than 100000 sats for fee
                 pruned_wallet_rows.append(utxo)
                 self.total_input_amount += utxo[3]
-                print("total input amount after: {}".format(self.total_input_amount))
-                print("total_paid amount after: {}".format(self.total_paid_amount))
-
-            # test to see if enough for the fee too
-            # assume for now fee < 100000
-            if self.total_input_amount > self.total_paid_amount + 100000:
+            else:
                 break
+
         if self.total_input_amount < self.total_paid_amount +100000:
             return "Error!  Not enough Bitcoin"
 
         for u in pruned_wallet_rows:
 
-            # u is a tuple housing the row from the database
-            # table utxo:
-            # u[0]:  database id
-            # u[1]:  private_key
-            # u[2]:  public_key
-            # u[3]:  utxo_id
-            # u[4]:  out_index
-            # u[5]:  amount
-            # u[6]:  status
-
+            # u is a tuple housing the row from the database:
             # u[0]:  database id
             # u[1]:  utxo_hash
-            # u[4]:  out_index
-            # u[5]:  amount
-            # u[6]:  status
+            # u[2]:  out_index
+            # u[3]:  amount
+            # u[4]:  status
 
-            # get the utxo at database index from the database wallet.db
-            #db_id, private_key_bytes, public_key_bytes, utxo_id, utxo_index, amount, status = u
             utxo_db_id, utxo_hash, out_index, amount, status = u
 
-            utxo_hash_hex = utxo_hash.hex()
+            utxo_hash_hex = utxo_hash.hex()  # tx hash for input in hex
 
             utxo_tx = TxFetcher.fetch(utxo_hash_hex, testnet=True, fresh=False)
             print(utxo_tx)
@@ -119,7 +108,7 @@ class TxFactory:
                 private_key_int = int.from_bytes(private_key_bytes, byteorder='big', signed=False)
                 private_keys.append(private_key_int)
 
-            # get the sript pubkey of the utxo of interest
+            # get the script pubkey of the utxo of interest
             utxo_script_pubkey = utxo_tx.tx_outs[out_index].script_pubkey
             # determine the script pubkey type
             utxo_script_pubkey_type = utxo_script_pubkey.determine_script_pubkey_type()
@@ -146,7 +135,7 @@ class TxFactory:
             tx_ins.append(txi)
         return tx_ins  # returns an array of TxIn objects to become an attribute of a Tx object
 
-    def create_output_array(self, array):
+    def create_factory_output_array(self, array):
         """
           Arguments:
             array: array of tuples:  (keys_db_id, address, amount)
@@ -176,22 +165,12 @@ class TxFactory:
 
         self.calculate_fee()
         change_amount = self.total_input_amount - self.total_paid_amount - self.fee
-        print("************** Numbers*********************")
-        print("total input: {}".format(self.total_input_amount))
-        print("total_paid_amount: {}".format(self.total_paid_amount))
-        print("fee: {}".format(self.fee))
-        print ("change: {}".format(change_amount))
         change_list[2] = change_amount
         change_element = tuple(change_list)
         change_utxo = Utxo(amount=change_amount, address=change_element[1])
         # append the change Utxo to self.output_array
         self.output_array.append(change_utxo)
         array.append(change_element)
-
-        #
-        #  When the loop is done--will have an array of self.output_array and self.total_paid_amount
-        #####################################
-
 
     # # Calculate fee
 
@@ -208,8 +187,8 @@ class TxFactory:
             #
             # for now create script public key hash
             #####
-            paid_script = p2pkh_script(decode_base58(o.address))
-            tx_out_paid = TxOut(o.amount, paid_script)
+            script_pubkey = p2pkh_script(decode_base58(o.address))
+            tx_out_paid = TxOut(o.amount, script_pubkey)
             tx_outs.append(tx_out_paid)
         return tx_outs # returns an array of TxOut objects to become an attribute of a Tx object
 

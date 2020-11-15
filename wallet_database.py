@@ -86,7 +86,9 @@ class MyDatabase:
 
 
     def retrieve_keys_for_payee(self):
-        print("in retrieve keys")
+        #
+        # utxo_id being null means the key pair has not been used in a transaction.
+        #
         retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where utxo_id IS NULL"""
 
         try:
@@ -96,7 +98,6 @@ class MyDatabase:
             print("Error while retrieving possible payees", error)
         self.connection.commit()
         self.cursor.close()
-        print(retrieved_keys)
         return retrieved_keys
 
     def retrieve_keys_for_utxo_db_id(self, utxo_id):
@@ -210,8 +211,7 @@ class MyDatabase:
             # utxos_result_array will be an array of tuples each
             # (id, utxo_hash, out_index, amount, status)
             utxos_result_array=self.cursor.execute(get_utxo_rows_querry, ('utxo',)).fetchall()
-            print("printing utxo result")
-            print(utxos_result_array)
+
         except sqlite3.Error as error:
             print("Error getting the utxos ", error)
 

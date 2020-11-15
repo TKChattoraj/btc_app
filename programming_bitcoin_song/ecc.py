@@ -222,7 +222,7 @@ class S256Point(Point):
         v = sig.r * s_inv % N
         # u*G + v*P should have as the x coordinate, r
         total = u * G + v * self
-        
+
         return total.x.num == sig.r
 
     def sec(self, compressed=True):
@@ -250,6 +250,7 @@ class S256Point(Point):
     def address(self, compressed=True, testnet=False):
         '''Returns the address string'''
         h160 = self.hash160(compressed)
+        print("Address Hash160: {}".format(h160))
         if testnet:
             prefix = b'\x6f'
         else:

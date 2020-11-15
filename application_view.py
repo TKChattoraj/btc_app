@@ -4,6 +4,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+import globals
+
 from wallet_database import MyDatabase
 
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -165,19 +167,19 @@ class F2Frame(ttk.Frame):
         show_frame.grid(column=0, row=2, sticky=(tk.N, tk.W, tk.E, tk.S))
 
         ttk.Label(show_frame, text="tx id: ").grid(column=0, row=2, sticky=tk.W)
-        ttk.Label(show_frame, text=tx.id()).grid(column=1, row=2, sticky=tk.W)
+        ttk.Label(show_frame, text=tx.id()).grid(column=1, columnspan=9, row=2, sticky=tk.W)
 
         ttk.Label(show_frame, text="version: ").grid(column=0, row=3, sticky=tk.W)
-        ttk.Label(show_frame, text=tx.version).grid(column=1, row=3, sticky=tk.W)
+        ttk.Label(show_frame, text=tx.version).grid(column=1, columnspan=9, row=3, sticky=tk.W)
 
-        ttk.Label(show_frame, text="input txs: ").grid(column=0, row=4, sticky=tk.W)
+        ttk.Label(show_frame, text="input txs: ").grid(column=0, columnspan=10, row=4, sticky=tk.W)
 
         for i, input in enumerate(tx.tx_ins):
             ttk.Label(show_frame, text="input tx: ").grid(column=1, row=5+i, sticky=tk.W)
-            ttk.Label(show_frame, text=input.prev_tx.hex()).grid(column=2, row=5+i, sticky=tk.W)
-            ttk.Label(show_frame, text="input index: ").grid(column=3, row=5+i, sticky=tk.W)
-            ttk.Label(show_frame, text=input.prev_index).grid(column=4, row=5+i, sticky=tk.W)
-            ttk.Label(show_frame, text="input verified: ").grid(column=5, row=5+i, sticky=tk.W)
+            ttk.Label(show_frame, text=input.prev_tx.hex()).grid(column=2, columnspan=4, row=5+i, sticky=tk.W)
+            ttk.Label(show_frame, text="input index: ").grid(column=6, row=5+i, sticky=tk.W)
+            ttk.Label(show_frame, text=input.prev_index).grid(column=7, row=5+i, sticky=tk.W)
+            ttk.Label(show_frame, text="input verified: ").grid(column=8, row=5+i, sticky=tk.W)
 
 
 
@@ -201,9 +203,9 @@ class F2Frame(ttk.Frame):
             else:
                 verified = "No"
 
-            ttk.Label(show_frame, text=verified).grid(column=6, row=5+i, sticky=tk.W)
+            ttk.Label(show_frame, text=verified).grid(column=9, row=5+i, sticky=tk.W)
 
-        ttk.Label(show_frame, text="output txs: ").grid(column=0, row=5+len(tx.tx_ins), sticky=tk.W)
+        ttk.Label(show_frame, text="output txs: ").grid(column=0, columnspan=10, row=5+len(tx.tx_ins), sticky=tk.W)
 
         # define starting row for output
         start = 6 + len(tx.tx_ins)
@@ -212,10 +214,10 @@ class F2Frame(ttk.Frame):
             ttk.Label(show_frame, text="amount: ").grid(column=1, row=start+i, sticky=tk.W)
             ttk.Label(show_frame, text=output.amount).grid(column=2, row=start+i, sticky=tk.W)
             ttk.Label(show_frame, text="script pub key: ").grid(column=3, row=start+i, sticky=tk.W)
-            ttk.Label(show_frame, text=output.script_pubkey).grid(column=4, row=start+i, sticky=tk.W)
+            ttk.Label(show_frame, text=output.script_pubkey).grid(column=4, columnspan=6,row=start+i, sticky=tk.W)
 
         ttk.Label(show_frame, text="locktime: ").grid(column=0, row=start+len(tx.tx_outs), sticky=tk.W)
-        ttk.Label(show_frame, text= tx.locktime).grid(column=1, row=start+len(tx.tx_outs), sticky=tk.W)
+        ttk.Label(show_frame, text= tx.locktime).grid(column=1, columnspan=9, row=start+len(tx.tx_outs), sticky=tk.W)
 
 
 
@@ -245,7 +247,9 @@ class F4Frame(ttk.Frame):
 
     def __init__(self, master):
         super().__init__(master)
+        print("in F4")
 
+        print("Wallet: {}".format(globals.app_wallet.name))
         tx_frame = ttk.Frame(self, padding=(3,3,12,12))
         tx_frame['borderwidth'] =2
         tx_frame['relief'] = 'sunken'
@@ -255,11 +259,8 @@ class F4Frame(ttk.Frame):
 
         # Integer Variables
         btc_amount = tk.IntVar()
-        a = calculate_btc_amount()
-        print("a:  {}".format(a))
+
         btc_amount.set(calculate_btc_amount())
-        print("btc amount: {}".format(btc_amount.get()))
-        print("btc_amount type: {}".format(type(btc_amount.get())))
 
         ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
         ttk.Label(tx_frame, text= btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
@@ -267,16 +268,17 @@ class F4Frame(ttk.Frame):
         ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
         master.bind('<Return>', get_payees)
 
+
 class Notebook(ttk.Notebook):
     def __init__(self, master):
         super().__init__(master)
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        self.db_ops_frame = F1Frame(self)
+        #self.db_ops_frame = F1Frame(self)
         self.f2 = F2Frame(self)
         self.f3 = F3Frame(self)
         self.f4 = F4Frame(self)
 
-        self.add(self.db_ops_frame, text ='Database Operations')
+        #self.add(self.db_ops_frame, text ='Database Operations')
         self.add(self.f2, text='Transaction Info')
         self.add(self.f3, text='Generate Keys')
         self.add(self.f4, text='Generate Tx')
@@ -286,5 +288,7 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-
+        #global globals.app_wallet
+        globals.app_wallet=MyDatabase('wallet')
+        print("Application: {}".format(globals.app_wallet.name))
         self.notebook = Notebook(self)
