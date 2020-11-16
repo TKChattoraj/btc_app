@@ -258,12 +258,12 @@ class F4Frame(ttk.Frame):
         #String Variables
 
         # Integer Variables
-        btc_amount = tk.IntVar()
+        globals.btc_amount = tk.IntVar()
 
-        btc_amount.set(calculate_btc_amount())
+        globals.btc_amount.set(globals.app_wallet.amount)
 
         ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
-        ttk.Label(tx_frame, text= btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
+        ttk.Label(tx_frame, text= globals.btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
 
         ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
         master.bind('<Return>', get_payees)
@@ -288,7 +288,7 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
-        #global globals.app_wallet
+
         globals.app_wallet=MyDatabase('wallet')
         print("Application: {}".format(globals.app_wallet.name))
         self.notebook = Notebook(self)

@@ -33,12 +33,8 @@ def get_payees(master):
     #  This internal table would be used to get the address to send to someone for them to
     #  pay this wallet owner.
     #
-    #global app_wallet
-    print("In get_payee: {}".format(globals.app_wallet.name))
-    wallet = MyDatabase("wallet")
     # key_array is array of tuples (db_id, private_key, public_key)
-    key_array = wallet.retrieve_keys_for_payee()
-
+    key_array = globals.app_wallet.retrieve_keys_for_payee()
 
     # make list of possible payee adresses:
     #
@@ -53,10 +49,17 @@ def get_payees(master):
 
         # produce the public key address
 
+        ###
+        # Update Note:  The public key address will depend on what type of ScriptPubkey
+        # will be used.  Assume for now p2pkh--which would require the Base58 of the
+        # hash160 of the public key.  p2sh would require the Base58 of the hash160
+        # of the Redeem script.
+        ###
+
         public_key_address = key_object.point.address(testnet=True)
 
         ##
-        # Maybe a verification that the public_key_address just created from the
+        # Update Note:  Maybe a verification that the public_key_address just created from the
         # private key is the same address that results from the database public_key.
         # Would need to take that public_key--take it from bytes to dar [?] to base58 [?]
         ##
@@ -185,8 +188,6 @@ def create_tx(master, array):
 #####
 #####
 #####
-
-
 
 
 def calculate_btc_amount():

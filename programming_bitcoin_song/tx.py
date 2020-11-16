@@ -16,7 +16,7 @@ from helper import (
     SIGHASH_ALL,
     decode_base58
 )
-
+from wallet_database import MyDatabase
 
 from script import Script, p2pkh_script, p2wsh_script
 
@@ -590,8 +590,33 @@ class Tx:
 
     def sign_all_inputs(self, utxo_array):
 
+
+        print("In sign_all_inputs")
+
         for i in range(len(self.tx_ins)):
-            private_key = PrivateKey(utxo_array[i].private_key)  #private_key in the tx.sign_input is a private_key object
+
+
+            # get the private/public keys from the wallet database keys table_name
+            # that point to the utxo database id.
+
+            wallet = MyDatabase("wallet")
+            # keys_list is a list of tuples: (keys_id, private_key, public_key)
+            utxo_db_id=utxo_array[i].id
+            print("Retrieving keys for the utxo")
+            keys_list = wallet.retrieve_keys_for_utxo_db_id(utxo_db_id)
+            private_keys = []
+            for pair in keys_list:
+                private_key_bytes = pair[1]
+                private_key_int = int.from_bytes(private_key_bytes, byteorder='big', signed=False)
+                private_keys.append(private_key_int)
+            # private_keys is a list of private keys as integers that are associated with the
+            # applicable utxo.
+
+            # For now:  assuming only one private key is associated with a utxo.
+            # Revision Note:  Will need to change the above assumption to allow for mutlisig.
+
+
+            private_key = PrivateKey(private_keys[0])  #private_key in the tx.sign_input is a private_key object
             self.sign_input(input_index = i, private_key=private_key)
 
     def is_coinbase(self):

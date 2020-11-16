@@ -96,17 +96,21 @@ class TxFactory:
             utxo_tx = TxFetcher.fetch(utxo_hash_hex, testnet=True, fresh=False)
             print(utxo_tx)
 
-            # get the private/public keys from the wallet database keys table_name
-            # that point to the utxo database id.
 
-            wallet = MyDatabase("wallet")
-            # keys_list is a list of tuples: (keys_id, private_key, public_key)
-            keys_list = wallet.retrieve_keys_for_utxo_db_id(utxo_db_id)
-            private_keys = []
-            for pair in keys_list:
-                private_key_bytes = pair[1]
-                private_key_int = int.from_bytes(private_key_bytes, byteorder='big', signed=False)
-                private_keys.append(private_key_int)
+            ################################# Moved functionaity to tx.py sign_all_inputs##########
+            # # get the private/public keys from the wallet database keys table_name
+            # # that point to the utxo database id.
+            #
+            # wallet = MyDatabase("wallet")
+            # # keys_list is a list of tuples: (keys_id, private_key, public_key)
+            # keys_list = wallet.retrieve_keys_for_utxo_db_id(utxo_db_id)
+            # private_keys = []
+            # for pair in keys_list:
+            #     private_key_bytes = pair[1]
+            #     private_key_int = int.from_bytes(private_key_bytes, byteorder='big', signed=False)
+            #     private_keys.append(private_key_int)
+            ################################# Moved functionaity to tx.py sign_all_inputs##########
+
 
             # get the script pubkey of the utxo of interest
             utxo_script_pubkey = utxo_tx.tx_outs[out_index].script_pubkey
@@ -119,10 +123,16 @@ class TxFactory:
             # Assuming for now that only one private key is needed
             # Will need to accommodate mutiple keys to sign a utxo later
             ###
-            ut =Utxo(prev_tx=utxo_hash, output_index=out_index, private_key=private_keys[0], amount=amount, id=id)
+            #ut =Utxo(prev_tx=utxo_hash, output_index=out_index, private_key=private_keys[0], amount=amount, id=utxo_db_id)
+            ut =Utxo(prev_tx=utxo_hash, output_index=out_index, amount=amount, id=utxo_db_id)
+            # add the utxo factory object to the factory utxo_array
 
-            # add the utxo factory objec to the factory utxo_array
             self.utxo_array.append(ut)
+            #
+            # Revision for multi-sig:
+            # Each index entry in utxo_array is associated with an input transaction.
+            # For multisig transactions, we'll need to make an index entry itself an array,
+            # holding all the utxos that will make the multisig input.
         return self
 
     def create_tx_ins_array(self):
@@ -337,5 +347,4 @@ def inputs_for_utxo_spents(pushed_tx):
 
 def calculate_wallet_amount():
     wallet_amount = MyDatabase.wallet_amount()
-    print(wallet_amount)
     return(wallet_amount)

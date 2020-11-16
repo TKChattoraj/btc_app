@@ -15,8 +15,9 @@ class MyDatabase:
     def __init__(self, name):
         try:
             self.connection = sqlite3.connect('%s.db'%(name))
-            self.cursor = self.connection.cursor()
+            self.cursor = None
             self.name = name
+            self.amount = self.wallet_amount()
             #self.cursor.close()
 
         except sqlite3.Error as error:
@@ -25,6 +26,17 @@ class MyDatabase:
         #      if (self.connection):
         #          self.connection.close()
         #          print("The SQLite connection is closed")
+
+
+
+    def wallet_amount(self):
+
+        # utxo_rows is a list of tuples:  (id, utxo_hash, out_index, amount, status)
+        utxo_rows=self.get_utxo_rows()
+        amount = 0
+        for utxo in utxo_rows:
+            amount += utxo[3]
+        return amount
 
     def close_connection(self):
         if self.connection:
@@ -89,6 +101,7 @@ class MyDatabase:
         #
         # utxo_id being null means the key pair has not been used in a transaction.
         #
+        self.cursor = self.connection.cursor()
         retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where utxo_id IS NULL"""
 
         try:
@@ -205,7 +218,7 @@ class MyDatabase:
 
     # retrieve from the wallet database those rows that are actual utxos, i.e. having tx_ids, but not spent
     def get_utxo_rows(self):
-
+        self.cursor = self.connection.cursor()
         get_utxo_rows_querry = """SELECT * FROM utxo where status = ? """
         try:
             # utxos_result_array will be an array of tuples each
@@ -425,12 +438,12 @@ class MyDatabase:
             print("Error while updating the keys for utxo_id")
             wallet.cursor.close()
 
-    @classmethod
-    def wallet_amount(cls):
-        wallet = cls("wallet")
-        # utxo_rows is a list of tuples:  (id, utxo_hash, out_index, amount, status)
-        utxo_rows=wallet.get_utxo_rows()
-        amount = 0
-        for utxo in utxo_rows:
-            amount += utxo[3]
-        return amount
+    # @classmethod
+    # def wallet_amount(cls):
+    #     wallet = cls("wallet")
+    #     # utxo_rows is a list of tuples:  (id, utxo_hash, out_index, amount, status)
+    #     utxo_rows=wallet.get_utxo_rows()
+    #     amount = 0
+    #     for utxo in utxo_rows:
+    #         amount += utxo[3]
+    #     return amount
