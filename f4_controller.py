@@ -25,7 +25,7 @@ from f4_model import inputs_for_new_utxos, inputs_for_utxo_spents, calculate_wal
 
 import f4_view
 
-def get_payees(master):
+def get_payees(frame_object):
     #
     #  To get the payees addresses, you would need to recieve the addresses from
     #  the payees' application, somehow--text, email, QR code etc maybe
@@ -67,9 +67,9 @@ def get_payees(master):
         # create array of tuples (db_id associated with private_key that make the public_key_address, public_key-address)
         possible_payee_addresses.append((key[0], public_key_address))
 
-    f4_view.show_possible_payees(master, possible_payee_addresses)
+    f4_view.show_possible_payees(frame_object, possible_payee_addresses)
 
-def create_tx(master, array):
+def create_tx(frame_object, array):
     """
     Arguments:
         master: is the master for the tkinker unit--the frame for the f4
@@ -131,11 +131,8 @@ def create_tx(master, array):
 
     #  Show the created tx in f4
     #f4_view.show_serialized_tx(master, tx_serialized_hex)
-    parent = master.winfo_parent()
-    print("tx_frame parent: {}".format(parent))
-    print("tx_frame parent as a widget: {}".format(master.master))
-    # master is the tx_frame
-    f4_view.show_tx(frame=master, tx=tx)
+
+    f4_view.show_tx(frame_object=frame_object, tx=tx)
 
     #######################  Turned off the push_raw_tx for now
     #

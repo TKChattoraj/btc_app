@@ -20,6 +20,7 @@ from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSON
 
 from f3_controller import make_keys, show_keys
 from f4_controller import create_tx, get_payees, calculate_btc_amount
+import f4_view
 
 class ColumnInfo():
     def __init__(self, master):
@@ -243,40 +244,53 @@ class F3Frame(ttk.Frame):
 
 
 
+
 class F4Frame(ttk.Frame):
 
     def __init__(self, master):
+        # master is a.app.notebook
+        # self is a.app.notebook.f4, the F4Frame instance
         super().__init__(master)
+
         print("in F4")
-
         print("Wallet: {}".format(globals.app_wallet.name))
-        tx_frame = ttk.Frame(self, padding=(3,3,12,12))
-        tx_frame['borderwidth'] =2
-        tx_frame['relief'] = 'sunken'
-        tx_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        # tx_frame = ttk.Frame(self, padding=(3,3,12,12))
+        # tx_frame['borderwidth'] =2
+        # tx_frame['relief'] = 'sunken'
+        # tx_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        self.master = master
 
-        #String Variables
+        # IntVar for the F4 Frame
+        self.wallet_amount = tk.IntVar()
+        self.wallet_amount.set(self.master.wallet.amount)
 
-        # Integer Variables
-        globals.btc_amount = tk.IntVar()
+        #globals.btc_amount.set(globals.app_wallet.amount)
+        f4_view.initial_view_frame(frame_object=self)
 
-        globals.btc_amount.set(globals.app_wallet.amount)
 
-        ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
-        ttk.Label(tx_frame, text= globals.btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
-
-        ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
-        master.bind('<Return>', get_payees)
+        # ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
+        # ttk.Label(tx_frame, text= globals.btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
+        #
+        # ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
+        # master.bind('<Return>', get_payees)
 
 
 class Notebook(ttk.Notebook):
     def __init__(self, master):
+        # master is a.app
+        # self is a.app.notebook
         super().__init__(master)
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
         #self.db_ops_frame = F1Frame(self)
-        self.f2 = F2Frame(self)
+        self.master = master
+
+        self.wallet=MyDatabase('wallet')
+        print("Notebook wallet:  {}".format(self.wallet.amount))
+
+        self.f2 = F2Frame(self) # making the master of a.app.notebook.f2 as a.app.notebook
         self.f3 = F3Frame(self)
         self.f4 = F4Frame(self)
+
 
         #self.add(self.db_ops_frame, text ='Database Operations')
         self.add(self.f2, text='Transaction Info')
@@ -285,10 +299,12 @@ class Notebook(ttk.Notebook):
 
 class Application(tk.Frame):
     def __init__(self, master=None):
+        # self is a.app
         super().__init__(master)
+        # master is a.root
         self.master = master
         self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
 
-        globals.app_wallet=MyDatabase('wallet')
-        print("Application: {}".format(globals.app_wallet.name))
+        # globals.app_wallet=MyDatabase('wallet')
+        # print("Application: {}".format(globals.app_wallet.name))
         self.notebook = Notebook(self)

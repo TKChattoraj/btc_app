@@ -115,6 +115,7 @@ class MyDatabase:
 
     def retrieve_keys_for_utxo_db_id(self, utxo_id):
         print("in retrieve keys for utxo_db_id")
+        self.cursor = self.connection.cursor()
         retrieve_payee_keys_querry = """ SELECT id, private_key, public_key FROM keys where utxo_id = ?"""
 
         try:
