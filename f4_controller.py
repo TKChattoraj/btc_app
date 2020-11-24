@@ -34,7 +34,7 @@ def get_payees(frame_object):
     #  pay this wallet owner.
     #
     # key_array is array of tuples (db_id, private_key, public_key)
-    key_array = globals.app_wallet.retrieve_keys_for_payee()
+    key_array = frame_object.master.wallet.retrieve_keys_for_payee()
 
     # make list of possible payee adresses:
     #

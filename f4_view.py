@@ -16,7 +16,8 @@ def initial_view_frame(frame_object):
     initial_view = ttk.Frame(frame_object, padding=(3,3,12,12))
     initial_view['borderwidth'] =2
     initial_view['relief'] = 'sunken'
-    initial_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+    initial_view.pack(fill=tk.BOTH, expand=tk.YES)
+    #initial_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
     frame_object.view = initial_view
 
     ttk.Label(frame_object.view, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
@@ -30,12 +31,13 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     #frame_object is the F4Frame instance
 
     #un-grid the existing view frame in the f4 frame object
-    frame_object.view.grid_remove()
+    frame_object.view.pack_forget()
     # create the new view frame to be placed in the f4 frame object
     payee_view = ttk.Frame(frame_object, padding=(3,3,12,12))
     payee_view['borderwidth'] =2
     payee_view['relief'] = 'sunken'
-    payee_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+    payee_view.pack(fill=tk.BOTH, expand=tk.YES)
+    #payee_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
     frame_object.view = payee_view
 
     address_amount_array = []
@@ -74,13 +76,14 @@ def show_tx(frame_object, tx):
     #frame_object is the F4Frame instance
 
     #un-grid the existing view frame in the f4 frame object
-    frame_object.view.grid_remove()
+    frame_object.view.pack_forget()
 
 
     show_tx_view = ttk.Frame(frame_object, padding=(3,3,12,12))
     show_tx_view['borderwidth'] =2
     show_tx_view['relief'] = 'sunken'
-    show_tx_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+    show_tx_view.pack(fill=tk.BOTH, expand=tk.YES)
+    #show_tx_view.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
 
     frame_object.view = show_tx_view
     #String Variables

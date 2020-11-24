@@ -251,28 +251,17 @@ class F4Frame(ttk.Frame):
         # master is a.app.notebook
         # self is a.app.notebook.f4, the F4Frame instance
         super().__init__(master)
-
+        self.pack(fill=tk.BOTH, expand=tk.YES)
         print("in F4")
-        print("Wallet: {}".format(globals.app_wallet.name))
-        # tx_frame = ttk.Frame(self, padding=(3,3,12,12))
-        # tx_frame['borderwidth'] =2
-        # tx_frame['relief'] = 'sunken'
-        # tx_frame.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+
         self.master = master
 
         # IntVar for the F4 Frame
         self.wallet_amount = tk.IntVar()
         self.wallet_amount.set(self.master.wallet.amount)
 
-        #globals.btc_amount.set(globals.app_wallet.amount)
         f4_view.initial_view_frame(frame_object=self)
 
-
-        # ttk.Label(tx_frame, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
-        # ttk.Label(tx_frame, text= globals.btc_amount.get()).grid(column=1, row=0, sticky=tk.W)
-        #
-        # ttk.Button(tx_frame, text="Create Tx", command = lambda: get_payees(tx_frame)).grid(column=1, row=2, sticky=tk.W)
-        # master.bind('<Return>', get_payees)
 
 
 class Notebook(ttk.Notebook):
@@ -280,7 +269,8 @@ class Notebook(ttk.Notebook):
         # master is a.app
         # self is a.app.notebook
         super().__init__(master)
-        self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.pack(fill=tk.BOTH, expand=tk.YES)
+        #self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
         #self.db_ops_frame = F1Frame(self)
         self.master = master
 
@@ -303,8 +293,7 @@ class Application(tk.Frame):
         super().__init__(master)
         # master is a.root
         self.master = master
-        self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
+        self.pack(fill=tk.BOTH, expand=tk.YES)
+        #self.grid(column=0, row=0, sticky=(tk.N,tk.W,tk.E,tk.S))
 
-        # globals.app_wallet=MyDatabase('wallet')
-        # print("Application: {}".format(globals.app_wallet.name))
         self.notebook = Notebook(self)
