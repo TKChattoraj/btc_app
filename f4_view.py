@@ -65,7 +65,8 @@ def show_possible_payees(frame_object, possible_payee_addresses):
         address_amount_array.append((keys_db_id, address, amount))
 
     ttk.Button(frame_object.view, text="Proceed", command = lambda: f4_controller.create_tx(frame_object, address_amount_array)).grid(column=3, row=len(address_amount_array)+4)
-
+    frame_object.tx_status.set("Nothing to see here")
+    ttk.Label(frame_object.view, textvariable=frame_object.tx_status).grid(column=0, row=6+len(address_amount_array), sticky=tk.W)
 
 
 def show_serialized_tx(master, tx_serialized_hex):

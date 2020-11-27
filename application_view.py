@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import globals
-
+import time
 from wallet_database import MyDatabase
 
 from python_bitcoinrpc_master.bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -260,7 +260,13 @@ class F4Frame(ttk.Frame):
         self.wallet_amount = tk.IntVar()
         self.wallet_amount.set(self.master.wallet.amount)
 
+        self.tx_status = tk.StringVar()
+
+
+
         f4_view.initial_view_frame(frame_object=self)
+
+
 
 
 

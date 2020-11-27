@@ -4,12 +4,15 @@
 # retrieves the utxo from the database wallet given the utxo database id
 # # transaction
 from wallet_database import MyDatabase
+from thread import UpDateThread
+
+import threading
 
 
 import tkinter as tk
 from tkinter import ttk
 
-
+import time
 import globals
 #import application_view
 import sys
@@ -69,6 +72,10 @@ def get_payees(frame_object):
 
     f4_view.show_possible_payees(frame_object, possible_payee_addresses)
 
+
+
+
+
 def create_tx(frame_object, array):
     """
     Arguments:
@@ -81,58 +88,75 @@ def create_tx(frame_object, array):
     """
     # create the "material" for a transaction--the "material will be a TxFactory object"
 
-
-    print("Creating the tx...")
-
-    # use list comprehension to remove potential tuples representing utxos (keys_db_id, address, amount)
-    # that are not to be use, i.e. to which we are not sending Bitcoin.
-
-    addresses_to_use = [item for item in array if item[2].get() > 0] # each item will be a tuple (key_db_id, address, amount)
-
-    change_address_to_use = [item for item in array if item[2].get()==0][0] # take the first element that has 0 BTC for change_key
-    # Note:  the making of change_address_to_use as above assumes array has at
-    # least one entry with 0 BTC.
-    ##
-    # If no such entry then, we'll need code to generate a private/public key pair, put it into the db, and then create a public address
-    ##
-
-    # create a TxFactory object--from which the tx will be made
-
-    tx_material = TxFactory()
-    tx_material.calc_paid_amount(addresses_to_use)
-
-    # append the change_address_to_use
-    addresses_to_use.append(change_address_to_use)
-
-
-
-    # create the TxFactory attribute that holds the utxo factory objects for
-    # the utxos that will be spent, i.e. the inputs
-    tx_material.create_factory_input_array()
-    # Create the tx_ins objects
-    tx_ins = tx_material.create_tx_ins_array()
-
-    tx_material.create_factory_output_array(addresses_to_use)
-
-    # Create the tx_outs object
-    tx_outs = tx_material.create_tx_outs_array()
-    print(tx_outs)
-
-
-    # Create the tx object
-    tx = Tx(version=1,tx_ins=tx_ins, tx_outs=tx_outs, locktime=0, testnet=True, segwit=False)
-    tx.sign_all_inputs(tx_material.utxo_array)
-    print("Tx_ins[0]: {}".format(tx.tx_ins[0]))
-    print()
-    tx_serialized = tx.serialize()
-    tx_serialized_hex = tx_serialized.hex()
-    print("Tx Serialized: {}".format(tx_serialized_hex))
-    print(tx)
-
+    threadLock = threading.Lock()
+    update_thread = UpDateThread(name="Thread-Update", parent_frame=frame_object, lock=threadLock)
+    update_thread.start()
+    print(type(update_thread))
+    print(update_thread)
+    print("Creating the tx...from create_tx")
+    print("Another line")
+#################################################
+    # # use list comprehension to remove potential tuples representing utxos (keys_db_id, address, amount)
+    # # that are not to be use, i.e. to which we are not sending Bitcoin.
+    #
+    # #update the StringVar tx_status
+    #
+    #
+    # addresses_to_use = [item for item in array if item[2].get() > 0] # each item will be a tuple (key_db_id, address, amount)
+    #
+    # change_address_to_use = [item for item in array if item[2].get()==0][0] # take the first element that has 0 BTC for change_key
+    # # Note:  the making of change_address_to_use as above assumes array has at
+    # # least one entry with 0 BTC.
+    # ##
+    # # If no such entry then, we'll need code to generate a private/public key pair, put it into the db, and then create a public address
+    # ##
+    #
+    # # create a TxFactory object--from which the tx will be made
+    #
+    # tx_material = TxFactory()
+    # tx_material.calc_paid_amount(addresses_to_use)
+    #
+    # # append the change_address_to_use
+    # addresses_to_use.append(change_address_to_use)
+    #
+    #
+    #
+    # # create the TxFactory attribute that holds the utxo factory objects for
+    # # the utxos that will be spent, i.e. the inputs
+    # tx_material.create_factory_input_array()
+    # # Create the tx_ins objects
+    # tx_ins = tx_material.create_tx_ins_array()
+    #
+    # tx_material.create_factory_output_array(addresses_to_use)
+    #
+    # # Create the tx_outs object
+    # tx_outs = tx_material.create_tx_outs_array()
+    # print(tx_outs)
+    #
+    #
+    # # Create the tx object
+    # tx = Tx(version=1,tx_ins=tx_ins, tx_outs=tx_outs, locktime=0, testnet=True, segwit=False)
+    # tx.sign_all_inputs(tx_material.utxo_array)
+    # print("Tx_ins[0]: {}".format(tx.tx_ins[0]))
+    # print()
+    # tx_serialized = tx.serialize()
+    # tx_serialized_hex = tx_serialized.hex()
+    # print("Tx Serialized: {}".format(tx_serialized_hex))
+    # print(tx)
+###########################################################################
     #  Show the created tx in f4
     #f4_view.show_serialized_tx(master, tx_serialized_hex)
 
-    f4_view.show_tx(frame_object=frame_object, tx=tx)
+    time.sleep(15)
+    print("ending in 5")
+    time.sleep(5)
+
+    update_thread.terminate_run()
+    #threadLock.acquire(0)
+    print("update_thread terminated")
+    print("ending the cr_tx")
+
+    #f4_view.show_tx(frame_object=frame_object, tx=tx)
 
     #######################  Turned off the push_raw_tx for now
     #
