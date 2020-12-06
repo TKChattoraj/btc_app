@@ -113,6 +113,19 @@ class MyDatabase:
         self.cursor.close()
         return retrieved_keys
 
+    def retrieve_n_keys(self, n):
+        self.cursor = self.connection.cursor()
+        retrieve_n_keys_querry = """SELECT id, private_key, public_key FROM keys where utxo_id IS NULL"""
+        try:
+            n_keys = self.cursor.execute(retrieve_n_keys_querry).fetchmany(n)
+        except sqlite3.Error as erro:
+            print("Error while retrieving {} keys".format(n), error)
+        self.connection.commit()
+        self.cursor.close()
+        return n_keys
+
+
+
     def retrieve_keys_for_utxo_db_id(self, utxo_id):
         print("in retrieve keys for utxo_db_id")
         self.cursor = self.connection.cursor()

@@ -4,9 +4,10 @@ from tkinter import ttk
 
 import globals
 
+import threading
 import f4_controller
 
-
+import time
 
 def initial_view_frame(frame_object):
     # frame_object will be the master of the master for the widgets created here
@@ -45,28 +46,95 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     ttk.Label(frame_object.view, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
     ttk.Label(frame_object.view, text= frame_object.wallet_amount.get()).grid(column=1, row=0, sticky=tk.W)
 
+    ttk.Label(frame_object.view, text="Send to the following outputs:").grid(column = 0, row=2, sticky=tk.W)
+    ttk.Label(frame_object.view, text="Output Type").grid(column=0, row =3, sticky=tk.W)
+    ttk.Label(frame_object.view, text="Address(es)").grid(column =1, row =3, sticky=tk.W)
+    ttk.Label(frame_object.view, text= "Amount").grid(column = 2, row=3, sticky=tk.W)
 
-    ttk.Label(frame_object.view, text="Address").grid(column =0, row =3, sticky=tk.W)
-    ttk.Label(frame_object.view, text= "Amount").grid(column = 1, row=3, sticky=tk.W)
-    for i, element in enumerate(possible_payee_addresses):
+    types = ['p2pkh', 'p2sh']
+    type = tk.StringVar()
+    #type.set('p2pkh')
 
-        #
-        #  element is a tuple element (db_id, address)
-        keys_db_id = element[0]
-        address = element[1]
-        amount = tk.IntVar()
-        amount.set(0)
+    address = tk.StringVar()
+    address.set(possible_payee_addresses)
+    #typeMenu = ttk.OptionMenu(frame_object.view, type, types[0], *types).grid(column=0, row=4, sticky=tk.W)
+    typeMenu = ttk.Combobox(frame_object.view, values=types).grid(column=0, row=4, sticky=tk.W)
+    lstaddress = tk.Listbox(frame_object.view, listvariable=address, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
 
-        ttk.Label(frame_object.view, text=address).grid(column =0, row =4+i, sticky=tk.W)
-        amount_entry = ttk.Entry(frame_object.view, width = 16, textvariable=amount)
-        amount_entry.grid(column=1, row=4+i, stick=tk.W)
-
-        # address_amount_array is an array of tupples (keys_db_id, address, amount)
-        address_amount_array.append((keys_db_id, address, amount))
+    # for i, element in enumerate(possible_payee_addresses):
+    #
+    #     #
+    #     #  element is a tuple element (db_id, address)
+    #     keys_db_id = element[0]
+    #     address = element[1]
+    #     amount = tk.IntVar()
+    #     amount.set(0)
+    #
+    #     ttk.Label(frame_object.view, text=address).grid(column =0, row =4+i, sticky=tk.W)
+    #     amount_entry = ttk.Entry(frame_object.view, width = 16, textvariable=amount)
+    #     amount_entry.grid(column=1, row=4+i, stick=tk.W)
+    #
+    #     # address_amount_array is an array of tupples (keys_db_id, address, amount)
+    #     address_amount_array.append((keys_db_id, address, amount))
 
     ttk.Button(frame_object.view, text="Proceed", command = lambda: f4_controller.create_tx(frame_object, address_amount_array)).grid(column=3, row=len(address_amount_array)+4)
     frame_object.tx_status.set("Nothing to see here")
     ttk.Label(frame_object.view, textvariable=frame_object.tx_status).grid(column=0, row=6+len(address_amount_array), sticky=tk.W)
+
+############
+
+class UpdateViewThread (threading.Thread):
+    def __init__(self, name, parent_frame):
+        threading.Thread.__init__(self)
+        print("initializing view thread")
+        self.name = name
+        self.parent_frame = parent_frame
+        print("initialing...parent_frame: {}".format(self.parent_frame.tx_status.get()))
+        self.running = True
+        self.lock = threading.Lock()
+
+    def run(self):
+        print("lock: {}".format(self.lock.acquire()))
+        while self.running:
+          print("in the run")
+          print(self.parent_frame.tx_status.get())
+          self.update()
+        self.parent_frame.tx_status.set("Create Tx Finished!")
+        self.parent_frame.view.update()
+        self.lock.release()
+
+
+    def terminate(self):
+        self.running = False
+
+
+
+    def update(self):
+
+        print("in the update")
+        print("before the first parent_frame access")
+        print(self.parent_frame.tx_status.get())
+        print("after the first parent_frame access")
+        self.parent_frame.tx_status.set("Creating the tx")
+        print("after the first")
+        self.parent_frame.view.update()
+        print("Creating the tx")
+        time.sleep(1)
+        self.parent_frame.tx_status.set("Creating the tx .")
+        self.parent_frame.view.update()
+        print("Creating the tx .")
+        time.sleep(1)
+        self.parent_frame.tx_status.set("Creating the tx ..")
+        self.parent_frame.view.update()
+        print("Creating the tx ..")
+        time.sleep(1)
+        self.parent_frame.tx_status.set("Creating the tx ...")
+        self.parent_frame.view.update()
+        print("Creating the tx ...")
+        time.sleep(1)
+        #parent_frame.after(0, self.update(parent_frame))
+
+############
 
 
 def show_serialized_tx(master, tx_serialized_hex):

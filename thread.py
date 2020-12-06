@@ -4,7 +4,7 @@ import application_view
 
 
 class UpDateThread (threading.Thread):
-    def __init__(self, name, parent_frame, lock):
+    def __init__(self, name, parent_frame):
         threading.Thread.__init__(self)
         print("initializing")
         self.name = name
@@ -14,11 +14,12 @@ class UpDateThread (threading.Thread):
         self.running = True
 
     def run(self):
-        self.lock.acquire(0)
+        #self.lock.acquire(blocking=False)
         while self.running:
           print("in the run")
-          print(self.parent_frame)
+          print(self.parent_frame.tx_status.get())
           self.update()
+        #self.lock.release()
 
     def terminate_run(self):
         self.running = False
@@ -27,8 +28,9 @@ class UpDateThread (threading.Thread):
     def update(self):
 
         print("in the update")
+        print("before the first parent_frame access")
         print(self.parent_frame.tx_status.get())
-
+        print("after the first parent_frame access")
         self.parent_frame.tx_status.set("Creating the tx")
         print("after the first")
         self.parent_frame.view.update()

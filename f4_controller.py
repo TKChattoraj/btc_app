@@ -28,6 +28,9 @@ from f4_model import inputs_for_new_utxos, inputs_for_utxo_spents, calculate_wal
 
 import f4_view
 
+
+
+
 def get_payees(frame_object):
     #
     #  To get the payees addresses, you would need to recieve the addresses from
@@ -72,14 +75,88 @@ def get_payees(frame_object):
 
     f4_view.show_possible_payees(frame_object, possible_payee_addresses)
 
+def get_n_public_addresses(frame_object, n):
+    key_array = frame_object.master.wallet.retrieve_n_keys(n)
+    n_addresses = []
+    for key in key_array:
+        private_key = int.from_bytes(key[1], byteorder='big', signed=False)
+        #
+        # generate the public key from the private key retrieved in the database
+        #
 
+        key_object = PrivateKey(private_key)
+
+        # produce the public key address
+
+        ###
+        # Update Note:  The public key address will depend on what type of ScriptPubkey
+        # will be used.  Assume for now p2pkh--which would require the Base58 of the
+        # hash160 of the public key.  p2sh would require the Base58 of the hash160
+        # of the Redeem script.
+        ###
+        # get the compressed sec public key
+        compressed = True
+        compressed_public_key_address = key_object.point.sec(compressed)
+
+        ##
+        # Update Note:  Maybe a verification that the public_key_address just created from the
+        # private key is the same address that results from the database public_key.
+        # Would need to take that public_key--take it from bytes to dar [?] to base58 [?]
+        ##
+
+        # create array of tuples (db_id associated with private_key that make the public_key_address, public_key-address)
+        n_addresses.append((key[0], compressed_public_key_address))
+    # Return info to the view
+    # uncomment when used in the app--comment for temp__run1
+    #f4_view.show_possible_payees(frame_object, possible_payee_addresses)
+    return n_addresses
+
+
+
+
+
+class CreateTxThread (threading.Thread):
+    def __init__(self, name, array):
+        threading.Thread.__init__(self)
+        print("initializing create tx thread")
+        self.name = name
+        self.array = array
+        self.lock = threading.Lock()
+        self.running = True
+
+    def run(self):
+
+        tx=_create_tx(self.array)
+
+    def terminate_run(self):
+        self.running = False
 
 
 
 def create_tx(frame_object, array):
+
+    create_tx_thread = CreateTxThread(name="Create-Tx", array=array)
+    create_tx_thread.start()
+    update_view_thread = f4_view.UpdateViewThread("update", frame_object)
+    update_view_thread.start()
+    print("before the join")
+    create_tx_thread.join()
+    print("after the join")
+    update_view_thread.terminate()
+
+    #update_view.terminate()
+    print("here is where we need access to the tx created in the create_tx_thread")
+
+
+
+    #f4_view.show_tx(frame_object=frame_object, tx=tx)
+
+
+def _create_tx(array):
     """
     Arguments:
         master: is the master for the tkinker unit--the frame for the f4
+        ## Here array needs to change to be [(type=p2pkh, p2sh; [addresses], amount)]
         array:  array of tuples (keys_db_id, address, amount)
 
     Returns
@@ -88,18 +165,15 @@ def create_tx(frame_object, array):
     """
     # create the "material" for a transaction--the "material will be a TxFactory object"
 
-    threadLock = threading.Lock()
-    update_thread = UpDateThread(name="Thread-Update", parent_frame=frame_object, lock=threadLock)
-    update_thread.start()
-    print(type(update_thread))
-    print(update_thread)
+
     print("Creating the tx...from create_tx")
-    print("Another line")
+
+
 #################################################
     # # use list comprehension to remove potential tuples representing utxos (keys_db_id, address, amount)
     # # that are not to be use, i.e. to which we are not sending Bitcoin.
     #
-    # #update the StringVar tx_status
+    #
     #
     #
     # addresses_to_use = [item for item in array if item[2].get() > 0] # each item will be a tuple (key_db_id, address, amount)
@@ -128,6 +202,12 @@ def create_tx(frame_object, array):
     # tx_ins = tx_material.create_tx_ins_array()
     #
     # tx_material.create_factory_output_array(addresses_to_use)
+    #####
+    ##### addresses_to_useneeds to be changed to be an array of tuples
+    ##### of how the outputs will be: [(type=p2pkh, p2sh; [addresses], amount)]
+    #####  if p2pkh then the [addresses] array will be lenght of 1
+    #####  if p2sh then the [addresses] array will be a list of all the possible
+    #####  sec public keys that could be signed  -- the n of the m of n
     #
     # # Create the tx_outs object
     # tx_outs = tx_material.create_tx_outs_array()
@@ -150,10 +230,7 @@ def create_tx(frame_object, array):
     time.sleep(15)
     print("ending in 5")
     time.sleep(5)
-
-    update_thread.terminate_run()
-    #threadLock.acquire(0)
-    print("update_thread terminated")
+    # threadLock.release()
     print("ending the cr_tx")
 
     #f4_view.show_tx(frame_object=frame_object, tx=tx)
