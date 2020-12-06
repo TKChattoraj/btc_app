@@ -58,8 +58,13 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     address = tk.StringVar()
     address.set(possible_payee_addresses)
     #typeMenu = ttk.OptionMenu(frame_object.view, type, types[0], *types).grid(column=0, row=4, sticky=tk.W)
-    typeMenu = ttk.Combobox(frame_object.view, values=types).grid(column=0, row=4, sticky=tk.W)
-    lstaddress = tk.Listbox(frame_object.view, listvariable=address, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
+
+    typeMenu = ttk.Combobox(frame_object.view, values=types)
+    typeMenu.grid(column=0, row=4, sticky=tk.W)
+    typeMenu.bind("<<ComboboxSelected>>", lambda x: getListBox(x, typeMenu, frame_object, possible_payee_addresses))
+
+
+
 
     # for i, element in enumerate(possible_payee_addresses):
     #
@@ -82,6 +87,18 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     ttk.Label(frame_object.view, textvariable=frame_object.tx_status).grid(column=0, row=6+len(address_amount_array), sticky=tk.W)
 
 ############
+def getListBox(event, typeMenu, frame_object, addresses):
+    print(event)
+    print(frame_object, addresses)
+    print("Self Value: {}".format(typeMenu.get()))\
+
+    just_addresses = []
+    for a in addresses:
+        just_addresses.append(a[1])
+    if typeMenu.get()=='p2pkh':
+        lstaddress = tk.Listbox(frame_object.view, listvariable=just_addresses[0], selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
+    elif typeMenu.get()=='p2sh':
+        lstaddress = tk.Listbox(frame_object.view, listvariable=just_addresses, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
 
 class UpdateViewThread (threading.Thread):
     def __init__(self, name, parent_frame):
