@@ -95,10 +95,13 @@ def getListBox(event, typeMenu, frame_object, addresses):
     just_addresses = []
     for a in addresses:
         just_addresses.append(a[1])
+    listvar = tk.StringVar()
+    listvar.set(just_addresses)
     if typeMenu.get()=='p2pkh':
-        lstaddress = tk.Listbox(frame_object.view, listvariable=just_addresses[0], selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
+        listvar.set(just_addresses[0])
+        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.BROWSE).grid(column=1, row=4, sticky=tk.W)
     elif typeMenu.get()=='p2sh':
-        lstaddress = tk.Listbox(frame_object.view, listvariable=just_addresses, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
+        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
 
 class UpdateViewThread (threading.Thread):
     def __init__(self, name, parent_frame):
