@@ -61,7 +61,8 @@ def show_possible_payees(frame_object, possible_payee_addresses):
 
     typeMenu = ttk.Combobox(frame_object.view, values=types)
     typeMenu.grid(column=0, row=4, sticky=tk.W)
-    typeMenu.bind("<<ComboboxSelected>>", lambda x: getListBox(x, typeMenu, frame_object, possible_payee_addresses))
+    btnMultSig = tk.Button(frame_object.view, text="Choose MultiSig", command = lambda: choose_multi_sig(frame_object, lstaddress))
+    typeMenu.bind("<<ComboboxSelected>>", lambda x: getListBox(x, typeMenu, btnMultSig, frame_object, possible_payee_addresses))
 
 
 
@@ -82,26 +83,51 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     #     # address_amount_array is an array of tupples (keys_db_id, address, amount)
     #     address_amount_array.append((keys_db_id, address, amount))
 
+
     ttk.Button(frame_object.view, text="Proceed", command = lambda: f4_controller.create_tx(frame_object, address_amount_array)).grid(column=3, row=len(address_amount_array)+4)
     frame_object.tx_status.set("Nothing to see here")
+
     ttk.Label(frame_object.view, textvariable=frame_object.tx_status).grid(column=0, row=6+len(address_amount_array), sticky=tk.W)
 
 ############
-def getListBox(event, typeMenu, frame_object, addresses):
+def getListBox(event, typeMenu, btnMultSig, frame_object, addresses):
     print(event)
     print(frame_object, addresses)
-    print("Self Value: {}".format(typeMenu.get()))\
+    print("Self Value: {}".format(typeMenu.get()))
 
     just_addresses = []
     for a in addresses:
         just_addresses.append(a[1])
     listvar = tk.StringVar()
     listvar.set(just_addresses)
+
+    btnMultSig.grid(column=1, row=5, sticky=tk.W)
     if typeMenu.get()=='p2pkh':
         listvar.set(just_addresses[0])
+        btnMultSig.grid_remove()
+        frame_object.view.update()
         lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.BROWSE).grid(column=1, row=4, sticky=tk.W)
+        print('p2pkh')
+        print(frame_object.view.grid_slaves())
+        print('info')
+        print(btnMultSig.grid_info())
+
     elif typeMenu.get()=='p2sh':
-        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.MULTIPLE).grid(column=1, row=4, sticky=tk.W)
+        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.MULTIPLE)
+        lstaddress.grid(column=1, row=4, sticky=tk.W)
+
+        print('p2sh')
+        print(frame_object.view.grid_slaves())
+        print('info')
+        print(btnMultSig.grid_info())
+
+
+
+
+def choose_multi_sig(frame_object, lstaddress):
+    print(lstaddress.curselection())
+    values = [lstaddress.get(index) for index in lstaddress.curselection()]
+    print(values)
 
 class UpdateViewThread (threading.Thread):
     def __init__(self, name, parent_frame):
