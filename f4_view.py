@@ -29,6 +29,7 @@ def initial_view_frame(frame_object):
 
 
 def show_possible_payees(frame_object, possible_payee_addresses):
+    print("started show_possible_payees")
     #frame_object is the F4Frame instance
 
     #un-grid the existing view frame in the f4 frame object
@@ -46,10 +47,10 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     ttk.Label(frame_object.view, text="Wallet Amount: ").grid(column=0, row=0, sticky=tk.W)
     ttk.Label(frame_object.view, text= frame_object.wallet_amount.get()).grid(column=1, row=0, sticky=tk.W)
 
-    ttk.Label(frame_object.view, text="Send to the following outputs:").grid(column = 0, row=2, sticky=tk.W)
+    ttk.Label(frame_object.view, text="Send to the following outputs:").grid(column = 0, columnspan=9, row=2, sticky=tk.W)
     ttk.Label(frame_object.view, text="Output Type").grid(column=0, row =3, sticky=tk.W)
-    ttk.Label(frame_object.view, text="Address(es)").grid(column =1, row =3, sticky=tk.W)
-    ttk.Label(frame_object.view, text= "Amount").grid(column = 2, row=3, sticky=tk.W)
+    ttk.Label(frame_object.view, text="Address(es)").grid(column=1, columnspan=60,row =3, sticky=tk.W)
+    ttk.Label(frame_object.view, text= "Amount").grid(column = 61, columnspan=30,row=3, sticky=tk.W)
 
     types = ['p2pkh', 'p2sh']
     type = tk.StringVar()
@@ -60,8 +61,10 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     #typeMenu = ttk.OptionMenu(frame_object.view, type, types[0], *types).grid(column=0, row=4, sticky=tk.W)
 
     typeMenu = ttk.Combobox(frame_object.view, values=types)
-    typeMenu.grid(column=0, row=4, sticky=tk.W)
-    btnMultSig = tk.Button(frame_object.view, text="Choose MultiSig", command = lambda: choose_multi_sig(frame_object, lstaddress))
+    typeMenu.grid(column=0, row=4, sticky=(tk.W, tk.N))
+    #btnMultSig = tk.Button(frame_object.view, text="Choose MultiSig", command = lambda: choose_multi_sig(frame_object, lstaddress))
+    btnMultSig = tk.Button(frame_object.view, text="Choose MultiSig")
+    print("right before typeMenu")
     typeMenu.bind("<<ComboboxSelected>>", lambda x: getListBox(x, typeMenu, btnMultSig, frame_object, possible_payee_addresses))
 
 
@@ -84,10 +87,11 @@ def show_possible_payees(frame_object, possible_payee_addresses):
     #     address_amount_array.append((keys_db_id, address, amount))
 
 
-    ttk.Button(frame_object.view, text="Proceed", command = lambda: f4_controller.create_tx(frame_object, address_amount_array)).grid(column=3, row=len(address_amount_array)+4)
+    ttk.Button(frame_object.view, text="Proceed", command = lambda: f4_controller.create_tx(frame_object, address_amount_array)).grid(column=91, row=len(address_amount_array)+4)
     frame_object.tx_status.set("Nothing to see here")
 
     ttk.Label(frame_object.view, textvariable=frame_object.tx_status).grid(column=0, row=6+len(address_amount_array), sticky=tk.W)
+    print("ending possible_payees")
 
 ############
 def getListBox(event, typeMenu, btnMultSig, frame_object, addresses):
@@ -99,23 +103,32 @@ def getListBox(event, typeMenu, btnMultSig, frame_object, addresses):
     for a in addresses:
         just_addresses.append(a[1])
     listvar = tk.StringVar()
+    listvar_1 = tk.StringVar()
     listvar.set(just_addresses)
-
-    btnMultSig.grid(column=1, row=5, sticky=tk.W)
+    listvar_1.set(just_addresses[0])
+    btnMultSig.configure(command = lambda: choose_multi_sig(frame_object, lstaddress))
+    lstaddress = tk.Listbox(frame_object.view, width=40)
+    #btnMultSig.grid(column=1, row=5, sticky=tk.W)
     if typeMenu.get()=='p2pkh':
-        listvar.set(just_addresses[0])
-        btnMultSig.grid_remove()
+
+        btnMultSig.grid_forget()
+        lstaddress.grid_forget()
         frame_object.view.update()
-        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.BROWSE).grid(column=1, row=4, sticky=tk.W)
+        lstaddress.configure(height=len(just_addresses)+2, listvariable=listvar_1, selectmode=tk.BROWSE)
+        lstaddress.grid(column=1, columnspan=60, row=4, sticky=(tk.W, tk.N))
         print('p2pkh')
         print(frame_object.view.grid_slaves())
         print('info')
         print(btnMultSig.grid_info())
 
     elif typeMenu.get()=='p2sh':
-        lstaddress = tk.Listbox(frame_object.view, listvariable=listvar, selectmode=tk.MULTIPLE)
-        lstaddress.grid(column=1, row=4, sticky=tk.W)
+        lstaddress.configure(height=len(just_addresses)+2, listvariable=listvar, selectmode=tk.MULTIPLE)
+        btnMultSig.grid_forget()
+        lstaddress.grid_forget()
+        frame_object.view.update()
 
+        lstaddress.grid(column=1, columnspan=60, row=4, sticky=tk.W)
+        btnMultSig.grid(column=1, columnspan=60, row=5, sticky=tk.W)
         print('p2sh')
         print(frame_object.view.grid_slaves())
         print('info')
